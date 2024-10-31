@@ -5,4 +5,11 @@ FastAPI-Data-Service Documentation
    :maxdepth: 2
    :caption: Contents:
 
-   modules
+   app
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
