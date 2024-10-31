@@ -14,6 +14,7 @@ uvicorn = "^0.32.0"
 psycopg2-binary = "^2.9.10"
 statistics = "^1.0.3.5"
 pytz = "^2024.2"
+sphinx-autodoc-typehints = "^2.5.0"
 
 
 [tool.poetry.group.dev.dependencies]
