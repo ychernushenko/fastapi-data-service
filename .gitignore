@@ -35,3 +35,6 @@ docs/_build/
 # Environment files
 .env
 .env.*
+
+# Environment files
+docs/build/*
