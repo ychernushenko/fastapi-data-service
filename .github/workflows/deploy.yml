@@ -26,9 +26,13 @@ jobs:
         run: |
           poetry install --with dev
       
+      - name: Activate poetry environment
+        run: |
+          poetry shell
+
       - name: Run tests
         run: |
-          poetry run pytest
+          pytest
 
       - name: Build Sphinx docs
         run: |
