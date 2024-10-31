@@ -1,8 +1,15 @@
-FastAPI-Data-Service documentation
+FastAPI-Data-Service Documentation
 ==================================
 
-.. automodule:: app
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :recursive:
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+
+   modules
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
