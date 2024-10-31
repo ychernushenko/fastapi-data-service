@@ -26,18 +26,14 @@ jobs:
         run: |
           poetry install --with dev
       
-      - name: Activate poetry environment
-        run: |
-          poetry shell
-
       - name: Run tests
         run: |
-          pytest
+          poetry run pytest
 
       - name: Build Sphinx docs
         run: |
           cd docs
-          make html
+          poetry run make html
       
       - name: Deploy docs to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
