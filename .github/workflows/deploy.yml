@@ -6,10 +6,8 @@ on:
       - main
 
 jobs:
-  setup:
+  test-and-docs:
     runs-on: ubuntu-latest
-    outputs:
-      cache-key: ${{ steps.cache.outputs.cache-hit }}  # Store cache info for reuse
     steps:
       - name: Check out code
         uses: actions/checkout@v2
@@ -23,34 +21,30 @@ jobs:
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          export PATH="$HOME/.local/bin:$PATH"
       
-      - name: Cache dependencies
-        id: cache
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pypoetry
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-
-
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: poetry install --no-root  # Install dependencies only if cache misses
-
-  test:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v2
+        run: |
+          poetry install --with dev
       
       - name: Run tests
-        run: poetry run pytest
+        run: |
+          poetry run pytest
+
+      - name: Build Sphinx docs
+        run: |
+          cd docs
+          make html
+      
+      - name: Deploy docs to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/_build/html
 
   build-and-deploy:
-    needs: [setup, test]
+    needs: test-and-docs
     runs-on: ubuntu-latest
+
     steps:
       - name: Check out code
         uses: actions/checkout@v2
@@ -76,26 +70,3 @@ jobs:
             --platform managed \
             --region ${{ vars.GCP_REGION }} \
             --allow-unauthenticated
-
-  docs:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v2
-      
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.10'
-      
-      - name: Build Sphinx docs
-        run: |
-          cd docs
-          make html
-      
-      - name: Deploy docs to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs/_build/html
