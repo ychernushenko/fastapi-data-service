@@ -33,10 +33,14 @@ jobs:
         run: |
           poetry run pytest
 
+      - name: Generate API documentation with sphinx-apidoc
+        run: |
+          poetry run sphinx-apidoc -o docs/source app
+
       - name: Build Sphinx docs
         run: |
           cd docs
-          poetry run make html
+          poetry run sphinx-build -b html source build/html
       
       - name: Deploy docs to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
