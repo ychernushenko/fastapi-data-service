@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Copy the pyproject.toml and poetry.lock files and install dependencies
 COPY pyproject.toml poetry.lock ./
-RUN pip install poetry && poetry install --no-root --no-dev
+RUN pip install poetry && poetry config virtualenvs.create false && poetry install --no-dev
 
 # Copy the application code
 COPY ./app /app
@@ -15,4 +15,4 @@ COPY ./app /app
 EXPOSE 8080
 
 # Command to run the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
