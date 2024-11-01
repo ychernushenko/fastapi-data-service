@@ -15,7 +15,7 @@ resource "google_sql_database_instance" "postgres_instance" {
   database_version = "POSTGRES_13"
   region           = var.region
   settings {
-    tier = "db-f1-micro"
+    tier = "db-g1-small"
   }
 }
 
@@ -35,4 +35,13 @@ resource "google_cloud_run_service" "fastapi_service" {
     }
   }
   autogenerate_revision_name = true
+}
+
+# IAM Binding for unauthenticated access to Cloud Run
+resource "google_cloud_run_service_iam_binding" "allow_unauthenticated" {
+  location = var.region
+  project  = var.project_id
+  service  = google_cloud_run_service.fastapi_service.name
+  role     = "roles/run.invoker"
+  members  = ["allUsers"]
 }
