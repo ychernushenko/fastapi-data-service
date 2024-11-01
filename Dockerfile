@@ -12,7 +12,7 @@ RUN pip install poetry && poetry install --no-root --no-dev
 COPY ./app /app
 
 # Expose the port
-EXPOSE 80
+EXPOSE 8080
 
 # Command to run the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
