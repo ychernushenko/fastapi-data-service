@@ -62,7 +62,7 @@ jobs:
           project_id: ${{ vars.GCP_PROJECT_ID }}
 
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v0
+        uses: google-github-actions/auth@v1
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
@@ -95,4 +95,4 @@ jobs:
         working-directory: ./terraform
         env:
           GOOGLE_CLOUD_KEYFILE_JSON: ${{ secrets.GCP_SA_KEY }}
-        run: terraform apply -auto-approve -var="project_id=${{ vars.GCP_PROJECT_ID }}" -var="region=${{ vars.GCP_REGION }}"
+        run: terraform apply -auto-approve -var="project_id=${{ vars.GCP_PROJECT_ID }}" -var="region=${{ vars.GCP_REGION }}" -var="credentials_file=${{ env.GOOGLE_CLOUD_KEYFILE_JSON }}"
