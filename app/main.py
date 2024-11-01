@@ -36,6 +36,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 def get_db():
     """
     Dependency function to provide a database session.
@@ -46,12 +47,13 @@ def get_db():
     finally:
         db.close()
 
+
 @app.post("/data/")
 async def receive_data(payload: DataPayload, db: Session = Depends(get_db)):
     """
     Receives data payload, calculates mean and standard deviation, 
     and stores it in the database.
-    
+
     Parameters:
         payload (DataPayload): Data received via POST, containing timestamp and data list.
         db (Session): SQLAlchemy session dependency.
@@ -60,7 +62,8 @@ async def receive_data(payload: DataPayload, db: Session = Depends(get_db)):
         dict: A success message with the ID of the stored record.
     """
     try:
-        utc_timestamp = datetime.strptime(payload.time_stamp, "%Y-%m-%dT%H:%M:%S%z").astimezone(pytz.utc)
+        utc_timestamp = datetime.strptime(
+            payload.time_stamp, "%Y-%m-%dT%H:%M:%S%z").astimezone(pytz.utc)
         mean_value = statistics.mean(payload.data)
         stddev_value = statistics.stdev(payload.data)
         new_data = ProcessedData(

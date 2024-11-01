@@ -33,6 +33,10 @@ jobs:
         run: |
           poetry run pytest
 
+      - name: Generate OpenAPI JSON
+        run: |
+          poetry run python generate_openapi.py        
+
       - name: Generate API documentation with sphinx-apidoc
         run: |
           poetry run sphinx-apidoc -o docs/source app

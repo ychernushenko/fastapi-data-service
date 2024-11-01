@@ -5,6 +5,7 @@ Pydantic schemas for FastAPI data processing service.
 from pydantic import BaseModel
 from typing import List
 
+
 class DataPayload(BaseModel):
     """
     Schema for the payload received in the /data endpoint.

@@ -6,3 +6,8 @@ FastAPI-Data-Service Documentation
    :caption: Contents:
 
    modules
+
+Swagger API Documentation
+=========================
+
+You can view the `Swagger API Documentation <_static/swagger-ui/index.html>`_.
