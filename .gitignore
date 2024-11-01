@@ -8,7 +8,6 @@ env/
 ENV/
 
 # Poetry dependency files
-poetry.lock
 *.egg-info/
 *.eggs/
 *.dist-info/
