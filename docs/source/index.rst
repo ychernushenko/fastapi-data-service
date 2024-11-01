@@ -1,4 +1,4 @@
-FastAPI-Data-Service Documentation
+FastAPI Data Service Documentation
 ==================================
 
 .. toctree::
