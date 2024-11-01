@@ -95,6 +95,5 @@ jobs:
         working-directory: ./terraform
         env:
           GOOGLE_CLOUD_KEYFILE_JSON: ${{ secrets.GCP_SA_KEY }}
-        run: terraform apply -auto-approve \
-            -var "project_id=${{ vars.GCP_PROJECT_ID }}" \
-            -var "region=${{ vars.GCP_REGION }}"
+        run: |
+          terraform apply -auto-approve -var="project_id=${{ vars.GCP_PROJECT_ID }}" -var="region=${{ vars.GCP_REGION }}"
