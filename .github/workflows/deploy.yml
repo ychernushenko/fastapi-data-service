@@ -70,6 +70,10 @@ jobs:
         run: |
           docker build -t gcr.io/${{ vars.GCP_PROJECT_ID }}/fastapi-service:latest .
 
+      - name: Configure Docker to use Google Cloud credentials
+        run: |
+          gcloud auth configure-docker --quiet
+
       - name: Push Docker image to Google Container Registry
         run: |
           docker push gcr.io/${{ vars.GCP_PROJECT_ID }}/fastapi-service:latest
