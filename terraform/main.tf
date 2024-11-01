@@ -6,9 +6,8 @@ terraform {
 }
 
 provider "google" {
-  credentials = file(var.credentials_file)
-  project     = var.project_id
-  region      = var.region
+  project = var.project_id
+  region  = var.region
 }
 
 resource "google_sql_database_instance" "postgres_instance" {
