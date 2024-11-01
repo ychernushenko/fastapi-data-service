@@ -1,12 +1,12 @@
 # Use the official FastAPI image
-FROM tiangolo/uvicorn-gunicorn-fastapi:python3.9
+FROM tiangolo/uvicorn-gunicorn-fastapi:python3.10
 
 # Set the working directory
 WORKDIR /app
 
-# Copy the requirements file and install dependencies
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy the pyproject.toml and poetry.lock files and install dependencies
+COPY pyproject.toml poetry.lock ./
+RUN pip install poetry && poetry install --no-root --no-dev
 
 # Copy the application code
 COPY ./app /app
