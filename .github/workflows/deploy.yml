@@ -153,7 +153,7 @@ jobs:
       - name: Move Diagram to gh-pages Branch
         run: |
           mkdir -p docs
-          mv terraform-diagram.png docs/terraform-diagram.pn
+          mv terraform-diagram.png docs/terraform-diagram.png
   
       - name: Commit and force push latest diagram to gh-pages
         run: |
