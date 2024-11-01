@@ -1,3 +1,10 @@
+terraform {
+  backend "gcs" {
+    bucket = "fastapi-data-service"
+    prefix = "terraform/state"
+  }
+}
+
 provider "google" {
   credentials = file(var.credentials_file)
   project     = var.project_id

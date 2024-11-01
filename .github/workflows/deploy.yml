@@ -48,7 +48,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs/_build/html
 
-  build-and-deploy:
+  build-and-tf-apply:
     needs: test-and-docs
     runs-on: ubuntu-latest
 
@@ -66,6 +66,12 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
+
+      # Docker build and push steps
       - name: Build Docker image
         run: |
           docker build -t gcr.io/${{ vars.GCP_PROJECT_ID }}/fastapi-service:latest .
@@ -78,10 +84,15 @@ jobs:
         run: |
           docker push gcr.io/${{ vars.GCP_PROJECT_ID }}/fastapi-service:latest
 
-      - name: Deploy to Google Cloud Run
-        run: |
-          gcloud run deploy fastapi-service \
-            --image gcr.io/${{ vars.GCP_PROJECT_ID }}/fastapi-service:latest \
-            --platform managed \
-            --region ${{ vars.GCP_REGION }} \
-            --allow-unauthenticated
+      # Terraform deployment steps
+      - name: Initialize Terraform
+        working-directory: ./terraform
+        env:
+          GOOGLE_CLOUD_KEYFILE_JSON: ${{ secrets.GCP_SA_KEY }}
+        run: terraform init
+
+      - name: Apply Terraform (Deploy Infrastructure)
+        working-directory: ./terraform
+        env:
+          GOOGLE_CLOUD_KEYFILE_JSON: ${{ secrets.GCP_SA_KEY }}
+        run: terraform apply -auto-approve
