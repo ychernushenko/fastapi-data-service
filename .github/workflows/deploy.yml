@@ -101,3 +101,49 @@ jobs:
           GOOGLE_CLOUD_KEYFILE_JSON: ${{ secrets.GCP_SA_KEY }}
         run: |
           terraform apply -auto-approve -var="project_id=${{ vars.GCP_PROJECT_ID }}" -var="region=${{ vars.GCP_REGION }}"
+  
+  generate-diagram:
+    needs: build-and-tf-apply
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+  
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+  
+      - name: Initialize Terraform
+        working-directory: ./terraform
+        run: terraform init
+  
+      - name: Generate Terraform Graph (DOT format)
+        working-directory: ./terraform
+        run: terraform graph > terraform-graph.dot
+  
+      - name: Install Graphviz
+        run: sudo apt-get install -y graphviz
+  
+      - name: Convert DOT to PNG
+        run: dot -Tpng terraform/terraform-graph.dot -o terraform-diagram.png
+  
+      - name: Checkout gh-pages branch
+        run: |
+          git fetch origin
+          git checkout gh-pages || git checkout --orphan gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
+      - name: Move Diagram to gh-pages Branch
+        run: |
+          mv terraform-diagram.png docs/terraform-diagram.png  # Adjust path as needed
+  
+      - name: Commit and push diagram to gh-pages
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/terraform-diagram.png
+          git commit -m "Update Terraform diagram on gh-pages"
+          git push origin gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
