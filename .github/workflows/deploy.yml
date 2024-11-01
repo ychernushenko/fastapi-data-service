@@ -92,10 +92,12 @@ jobs:
         run: terraform init
 
       - name: Write Google Cloud credentials to file
-        run: echo "${{ secrets.GCP_SA_KEY }}" > ${{ runner.temp }}/gcp-key.json
+        run: |
+          echo "${{ secrets.GCP_SA_KEY }}" | base64 --decode > ${{ runner.temp }}/gcp-key.json
       
       - name: Apply Terraform (Deploy Infrastructure)
         working-directory: ./terraform
         env:
-          GOOGLE_CLOUD_KEYFILE_JSON_PATH: ${{ runner.temp }}/gcp-key.json
-        run: terraform apply -auto-approve -var "project_id=${{ vars.GCP_PROJECT_ID }}" -var "region=${{ vars.GCP_REGION }}" -var "credentials_file=${{ env.GOOGLE_CLOUD_KEYFILE_JSON_PATH }}"
+          GOOGLE_CLOUD_KEYFILE_JSON: ${{ runner.temp }}/gcp-key.json
+        run: terraform apply -auto-approve -var "project_id=${{ vars.GCP_PROJECT_ID }}" -var "region=${{ vars.GCP_REGION }}" -var "credentials_file=${{ env.GOOGLE_CLOUD_KEYFILE_JSON }}"
+      
