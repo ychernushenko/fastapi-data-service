@@ -115,10 +115,14 @@ jobs:
   
       - name: Initialize Terraform
         working-directory: ./terraform
+        env:
+          GOOGLE_CLOUD_KEYFILE_JSON: ${{ secrets.GCP_SA_KEY }}
         run: terraform init
   
       - name: Generate Terraform Graph (DOT format)
         working-directory: ./terraform
+        env:
+          GOOGLE_CLOUD_KEYFILE_JSON: ${{ secrets.GCP_SA_KEY }}
         run: terraform graph > terraform-graph.dot
   
       - name: Install Graphviz
