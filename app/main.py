@@ -8,7 +8,7 @@ import os
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
-from app.models import ProcessedData
+from app.models import ProcessedData, Base  # Import Base to create tables
 from app.schema import DataPayload
 from datetime import datetime
 import statistics
@@ -20,6 +20,9 @@ connect_args = {"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
 engine = create_engine(DATABASE_URL, connect_args=connect_args)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Ensure tables are created
+Base.metadata.create_all(bind=engine)
 
 # Application instance
 app = FastAPI()
