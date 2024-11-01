@@ -93,7 +93,7 @@ jobs:
 
       - name: Write Google Cloud credentials to file
         run: |
-          echo "${{ secrets.GCP_SA_KEY }}" | base64 --decode > ${{ runner.temp }}/gcp-key.json
+          echo "${{ secrets.GCP_SA_KEY }}" > ${{ runner.temp }}/gcp-key.json
       
       - name: Apply Terraform (Deploy Infrastructure)
         working-directory: ./terraform
