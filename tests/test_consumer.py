@@ -6,16 +6,17 @@ the correct structure of `ProcessedData`.
 """
 
 import pytest
-from datetime import datetime
-import pytz
 from unittest.mock import patch
 from app.consumer import process_data
 from app.schema import DataPayload
 from app.models import ProcessedData
+from datetime import datetime
+import pytz
 
 
 @patch("app.consumer.SessionLocal")
-def test_process_data(mock_db_session):
+@patch("app.consumer.pubsub_v1.SubscriberClient")
+def test_process_data(mock_pubsub_client, mock_db_session):
     """
     Tests the process_data function to ensure correct calculation of mean,
     standard deviation, database storage, and the structure of `ProcessedData`.

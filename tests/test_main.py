@@ -4,7 +4,6 @@ Tests for FastAPI data processing service with GCS and Pub/Sub.
 Tests the API endpoint to verify successful GCS upload and Pub/Sub message publishing.
 """
 
-import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch
 from app.main import app
