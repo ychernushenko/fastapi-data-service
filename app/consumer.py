@@ -19,20 +19,16 @@ from fastapi import FastAPI
 import pytz
 import time
 import threading
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
 
-# Database configuration: Use SQLite in-memory database if TESTING is set to true
+# Database configuration
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
 DB_NAME = os.getenv("DB_NAME", "appdb")
 
-if os.getenv("TESTING") == "true":
-    DATABASE_URL = "sqlite:///:memory:"
-else:
-    DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-
+DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -48,30 +44,51 @@ def get_subscriber_client():
     return pubsub_v1.SubscriberClient()
 
 
-def process_data(data_payload: DataPayload):
+def process_data(data_payload: DataPayload, db_session):
     """
     Processes the payload data by calculating mean and standard deviation,
     then stores the results in the database.
 
     Parameters:
         data_payload (DataPayload): The data payload to process.
+        db_session: The database session to use for storing data.
     """
     utc_timestamp = datetime.strptime(
         data_payload.time_stamp, "%Y-%m-%dT%H:%M:%S%z").astimezone(pytz.utc)
     mean_value = statistics.mean(data_payload.data)
     stddev_value = statistics.stdev(data_payload.data)
 
+    new_data = ProcessedData(
+        utc_timestamp=utc_timestamp,
+        mean=mean_value,
+        stddev=stddev_value
+    )
+    db_session.add(new_data)
+    db_session.commit()
+    db_session.refresh(new_data)
+
+
+@contextmanager
+def get_db_session():
+    """
+    Provides a database session for operations.
+
+    Yields:
+        A database session object.
+    """
     db = SessionLocal()
-    new_data = ProcessedData(utc_timestamp=utc_timestamp,
-                             mean=mean_value, stddev=stddev_value)
-    db.add(new_data)
-    db.commit()
-    db.refresh(new_data)
-    db.close()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 def pull_messages():
-    """Pulls messages from Pub/Sub and processes them."""
+    """
+    Pulls messages from Pub/Sub, processes each message, and stores results in the database.
+
+    Messages are fetched in batches, processed, and acknowledged to the Pub/Sub service.
+    """
     subscriber = get_subscriber_client()
     subscription_path = subscriber.subscription_path(
         project_id, subscription_id)
@@ -83,16 +100,20 @@ def pull_messages():
         for received_message in response.received_messages:
             data_payload = DataPayload(
                 **json.loads(received_message.message.data.decode("utf-8")))
-            process_data(data_payload)
+            with get_db_session() as db_session:
+                process_data(data_payload, db_session)
             subscriber.acknowledge(request={"subscription": subscription_path, "ack_ids": [
                                    received_message.ack_id]})
-
         time.sleep(5)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Lifespan context manager to start and stop the Pub/Sub message pulling."""
+    """
+    Lifespan context manager to start and stop the Pub/Sub message pulling in a background thread.
+
+    Starts the message-pulling thread when the app starts and joins the thread when the app shuts down.
+    """
     thread = threading.Thread(target=pull_messages)
     thread.start()
     yield

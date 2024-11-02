@@ -32,7 +32,6 @@ jobs:
 
       - name: Run tests
         env:
-          TESTING: "true"
           PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
           PUBSUB_TOPIC: "data-topic"
         run: |
