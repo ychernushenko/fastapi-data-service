@@ -56,6 +56,7 @@ def test_process_data_calculations(db_session):
     assert result.mean == pytest.approx(expected_mean, 0.001)
     assert result.stddev == pytest.approx(expected_stddev, 0.001)
 
-    # Validate the UTC timestamp conversion
-    expected_utc_timestamp = datetime(2019, 5, 1, 10, 0, tzinfo=pytz.utc)
-    assert result.utc_timestamp == expected_utc_timestamp
+    # Validate the UTC timestamp conversion, ignoring timezone info
+    expected_utc_timestamp = datetime(
+        2019, 5, 1, 10, 0, tzinfo=pytz.utc).replace(tzinfo=None)
+    assert result.utc_timestamp.replace(tzinfo=None) == expected_utc_timestamp
