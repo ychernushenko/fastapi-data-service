@@ -10,7 +10,6 @@ import json
 import base64
 import statistics
 from datetime import datetime
-from google.cloud import pubsub_v1
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy import create_engine
 from app.models import ProcessedData, Base
