@@ -18,17 +18,20 @@ from app.schema import DataPayload
 import pytz
 import time
 
-# Database configuration
-# Database configuration (Updated for PostgreSQL with environment variables)
+# Database configuration (use SQLite in-memory for testing if environment variables are not set)
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
 DB_NAME = os.getenv("DB_NAME", "appdb")
 
-DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-engine = create_engine(DATABASE_URL)
+if DB_USER and DB_PASSWORD:
+    DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+else:
+    # Use SQLite in-memory database for tests
+    DATABASE_URL = "sqlite:///:memory:"
 
+engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 project_id = os.getenv("PROJECT_ID")
