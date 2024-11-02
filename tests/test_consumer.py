@@ -1,47 +1,31 @@
 """
 Tests for the consumer processing logic in the data processing service.
 
-This module verifies the processing of data payloads, including mean and
-standard deviation calculations and database storage.
+Verifies the processing of data payloads, including mean and standard deviation calculations
+and database storage.
 """
 
 import pytest
 from unittest.mock import patch
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from app.consumer import process_data
 from app.schema import DataPayload
-from app.models import ProcessedData, Base
+from app.models import ProcessedData
 from datetime import datetime
 import pytz
-
-# Setup in-memory SQLite engine for testing
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from app.models import Base
 
 
 @pytest.fixture(scope="module")
-def test_engine():
+def db_session():
     """
-    Creates an in-memory SQLite database engine for testing.
-
-    Returns:
-        Engine: An SQLAlchemy engine instance for in-memory SQLite database.
+    Fixture to set up an in-memory SQLite database for testing.
+    Provides a SQLAlchemy session for each test.
     """
     engine = create_engine("sqlite:///:memory:")
-    Base.metadata.create_all(bind=engine)  # Create tables in in-memory SQLite
-    yield engine
-    Base.metadata.drop_all(bind=engine)  # Clean up after tests
-
-
-@pytest.fixture(scope="module")
-def db_session(test_engine):
-    """
-    Provides a SQLAlchemy session connected to the in-memory SQLite database.
-
-    Returns:
-        Session: A session for interacting with the in-memory SQLite database.
-    """
-    SessionLocal = sessionmaker(
-        autocommit=False, autoflush=False, bind=test_engine)
+    SessionLocal = sessionmaker(bind=engine)
+    Base.metadata.create_all(bind=engine)
     session = SessionLocal()
     yield session
     session.close()
@@ -59,7 +43,7 @@ def test_process_data_calculations(mock_get_subscriber_client, db_session):
     """
     mock_get_subscriber_client.return_value = None  # Avoid actual Pub/Sub calls
 
-    # Define a sample data payload with known values
+    # Define a sample data payload with a smaller dataset
     data_payload = DataPayload(
         time_stamp="2019-05-01T06:00:00-04:00",
         data=[0.379, 1.589, 2.188]
