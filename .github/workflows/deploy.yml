@@ -82,7 +82,7 @@ jobs:
       # Zip and Upload Cloud Function Source Code
       - name: Zip Cloud Function code
         run: |
-          zip -r consumer-function.zip app/consumer.py
+          zip -r consumer-function.zip app/consumer/main.py
 
       - name: Upload Zip to GCS
         run: |

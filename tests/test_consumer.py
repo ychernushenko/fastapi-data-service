@@ -1,5 +1,5 @@
 """
-Tests for the Pub/Sub consumer and data processing functions in consumer.py.
+Tests for the Pub/Sub consumer and data processing functions in consumer/main.py.
 
 These tests simulate Pub/Sub events and verify that data is correctly processed and stored
 in a test SQLite database.
@@ -8,7 +8,7 @@ in a test SQLite database.
 import json
 import base64
 import pytest
-from app.consumer import process_data, pubsub_consumer, get_db
+from app.consumer.main import process_data, pubsub_consumer, get_db
 from app.models import ProcessedData
 from app.schema import DataPayload
 from datetime import datetime
