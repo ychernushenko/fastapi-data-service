@@ -1,7 +1,7 @@
 # Use the official Python FastAPI image
 FROM tiangolo/uvicorn-gunicorn-fastapi:python3.10
 
-# Set the working directory to /app
+# Set the working directory
 WORKDIR /app
 
 # Copy the dependency files
@@ -10,11 +10,11 @@ COPY pyproject.toml poetry.lock ./
 # Install Poetry and dependencies
 RUN pip install poetry && poetry config virtualenvs.create false && poetry install --no-dev
 
-# Copy the application code
-COPY ./app /app/app
+# Copy the FastAPI application code
+COPY ./src /app/src
 
-# Expose the correct port
+# Expose the port
 EXPOSE 8080
 
 # Start the FastAPI application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "src.fastapi.main:app", "--host", "0.0.0.0", "--port", "8080"]

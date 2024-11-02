@@ -86,7 +86,11 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           cd app/consumer 
           poetry export -f requirements.txt --output requirements.txt --without-hashes
-          zip -j ../../consumer-function.zip main.py requirements.txt
+          cp main.py models.py requirements.txt ../../temp_function_package/
+          cp -r ../shared ../../temp_function_package/shared
+          cd ../../temp_function_package
+          zip -r ../consumer-function.zip *
+
 
       - name: Upload Zip to GCS
         run: |
