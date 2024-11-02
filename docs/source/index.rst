@@ -6,5 +6,5 @@ FastAPI Data Service Documentation
    :caption: Contents:
 
    modules
-   curl_guide
    swagger
+   curl_guide
