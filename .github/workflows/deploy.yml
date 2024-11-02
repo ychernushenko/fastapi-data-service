@@ -101,26 +101,6 @@ jobs:
         run: |
           docker push gcr.io/${{ vars.GCP_PROJECT_ID }}/consumer-service:latest
 
-      # Deploy fastapi-service to Cloud Run
-      - name: Deploy fastapi-service to Cloud Run
-        run: |
-          gcloud run deploy fastapi-service \
-            --image gcr.io/${{ vars.GCP_PROJECT_ID }}/fastapi-service:latest \
-            --region ${{ vars.GCP_REGION }} \
-            --platform managed \
-            --allow-unauthenticated \
-            --update-env-vars "DB_USER=${{ secrets.POSTGRES_USER }},DB_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}"
-
-      # Deploy consumer-service to Cloud Run
-      - name: Deploy consumer-service to Cloud Run
-        run: |
-          gcloud run deploy consumer-service \
-            --image gcr.io/${{ vars.GCP_PROJECT_ID }}/consumer-service:latest \
-            --region ${{ vars.GCP_REGION }} \
-            --platform managed \
-            --no-allow-unauthenticated \
-            --update-env-vars "DB_USER=${{ secrets.POSTGRES_USER }},DB_PASSWORD=${{ secrets.POSTGRES_PASSWORD }},PROJECT_ID=${{ vars.GCP_PROJECT_ID }},PUBSUB_SUBSCRIPTION=data-subscription"
-
       # Terraform deployment steps
       - name: Initialize Terraform
         working-directory: ./terraform
