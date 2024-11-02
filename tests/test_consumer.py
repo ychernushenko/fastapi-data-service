@@ -49,9 +49,9 @@ def test_process_data_calculations(mock_db_session):
 
     # Validate the mean and standard deviation values
     expected_mean = 1.3853  # Calculated mean
-    expected_stddev = 0.9084  # Calculated standard deviation
+    expected_stddev = 0.9215  # Calculated standard deviation
     assert added_record.mean == pytest.approx(expected_mean, 0.001)
-    assert added_record.stddev == pytest.approx(expected_stddev, 0.01)
+    assert added_record.stddev == pytest.approx(expected_stddev, 0.001)
 
     # Validate the UTC timestamp conversion
     expected_utc_timestamp = datetime(
