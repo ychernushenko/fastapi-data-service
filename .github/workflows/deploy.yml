@@ -82,7 +82,8 @@ jobs:
       # Zip and Upload Cloud Function Source Code
       - name: Zip Cloud Function code
         run: |
-          zip -r consumer-function.zip app/consumer/main.py
+          cd app/consumer
+          zip -j ../../consumer-function.zip main.py 
 
       - name: Upload Zip to GCS
         run: |
