@@ -35,61 +35,42 @@
 <span class="sd">Consumer service for processing messages from Pub/Sub and saving processed data to the database.</span>
 
 <span class="sd">This module listens to a Google Pub/Sub topic, processes the received data,</span>
-<span class="sd">and stores the processed results in PostgreSQL or an SQLite database for testing.</span>
+<span class="sd">and stores the processed results in the database.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">base64</span>
 <span class="kn">import</span> <span class="nn">statistics</span>
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">from</span> <span class="nn">google.cloud</span> <span class="kn">import</span> <span class="n">pubsub_v1</span>
 <span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="kn">import</span> <span class="n">Session</span><span class="p">,</span> <span class="n">sessionmaker</span>
 <span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">create_engine</span>
 <span class="kn">from</span> <span class="nn">app.models</span> <span class="kn">import</span> <span class="n">ProcessedData</span><span class="p">,</span> <span class="n">Base</span>
 <span class="kn">from</span> <span class="nn">app.schema</span> <span class="kn">import</span> <span class="n">DataPayload</span>
-<span class="kn">from</span> <span class="nn">fastapi</span> <span class="kn">import</span> <span class="n">FastAPI</span><span class="p">,</span> <span class="n">Depends</span>
 <span class="kn">import</span> <span class="nn">pytz</span>
-<span class="kn">import</span> <span class="nn">threading</span>
-<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">asynccontextmanager</span>
 
-<span class="c1"># Database configuration for production</span>
+<span class="c1"># Production database configuration</span>
 <span class="n">DB_USER</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DB_USER&quot;</span><span class="p">)</span>
 <span class="n">DB_PASSWORD</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DB_PASSWORD&quot;</span><span class="p">)</span>
 <span class="n">DB_HOST</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DB_HOST&quot;</span><span class="p">,</span> <span class="s2">&quot;localhost&quot;</span><span class="p">)</span>
 <span class="n">DB_PORT</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DB_PORT&quot;</span><span class="p">,</span> <span class="s2">&quot;5432&quot;</span><span class="p">)</span>
 <span class="n">DB_NAME</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DB_NAME&quot;</span><span class="p">,</span> <span class="s2">&quot;appdb&quot;</span><span class="p">)</span>
-
 <span class="n">DATABASE_URL</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;postgresql://</span><span class="si">{</span><span class="n">DB_USER</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">DB_PASSWORD</span><span class="si">}</span><span class="s2">@</span><span class="si">{</span><span class="n">DB_HOST</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">DB_PORT</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">DB_NAME</span><span class="si">}</span><span class="s2">&quot;</span>
-
-
-<div class="viewcode-block" id="get_engine">
-<a class="viewcode-back" href="../../app.html#app.consumer.get_engine">[docs]</a>
-<span class="k">def</span> <span class="nf">get_engine</span><span class="p">(</span><span class="n">database_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DATABASE_URL</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Return a database engine.</span>
-
-<span class="sd">    Parameters:</span>
-<span class="sd">        database_url (str): Database URL to connect to, default is production database.</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">        sqlalchemy.engine.Engine: SQLAlchemy engine connected to the specified database.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">create_engine</span><span class="p">(</span><span class="n">database_url</span><span class="p">)</span></div>
-
-
-<span class="c1"># Dependency to provide a session for the database</span>
 
 
 <div class="viewcode-block" id="get_db">
 <a class="viewcode-back" href="../../app.html#app.consumer.get_db">[docs]</a>
-<span class="k">def</span> <span class="nf">get_db</span><span class="p">():</span>
+<span class="k">def</span> <span class="nf">get_db</span><span class="p">(</span><span class="n">database_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DATABASE_URL</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Provide a database session for production environment.</span>
+<span class="sd">    Provides a database session for the specified database URL.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        database_url (str): Database URL to connect to. Defaults to production DATABASE_URL.</span>
 
 <span class="sd">    Yields:</span>
-<span class="sd">        sqlalchemy.orm.Session: A session bound to the production database.</span>
+<span class="sd">        sqlalchemy.orm.Session: A session bound to the specified database.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">engine</span> <span class="o">=</span> <span class="n">get_engine</span><span class="p">(</span><span class="n">DATABASE_URL</span><span class="p">)</span>
+    <span class="n">engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="n">database_url</span><span class="p">)</span>
     <span class="n">SessionLocal</span> <span class="o">=</span> <span class="n">sessionmaker</span><span class="p">(</span><span class="n">autocommit</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">autoflush</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">bind</span><span class="o">=</span><span class="n">engine</span><span class="p">)</span>
     <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">create_all</span><span class="p">(</span><span class="n">bind</span><span class="o">=</span><span class="n">engine</span><span class="p">)</span>
     <span class="n">db</span> <span class="o">=</span> <span class="n">SessionLocal</span><span class="p">()</span>
@@ -100,31 +81,12 @@
 
 
 
-<span class="n">project_id</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;PROJECT_ID&quot;</span><span class="p">)</span>
-<span class="n">subscription_id</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;PUBSUB_SUBSCRIPTION&quot;</span><span class="p">,</span> <span class="s2">&quot;data-subscription&quot;</span><span class="p">)</span>
-
-<span class="n">app</span> <span class="o">=</span> <span class="n">FastAPI</span><span class="p">()</span>
-
-
-<div class="viewcode-block" id="get_subscriber_client">
-<a class="viewcode-back" href="../../app.html#app.consumer.get_subscriber_client">[docs]</a>
-<span class="k">def</span> <span class="nf">get_subscriber_client</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Initialize and return the Google Pub/Sub subscriber client.</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">        pubsub_v1.SubscriberClient: Google Pub/Sub subscriber client.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">pubsub_v1</span><span class="o">.</span><span class="n">SubscriberClient</span><span class="p">()</span></div>
-
-
-
 <div class="viewcode-block" id="process_data">
 <a class="viewcode-back" href="../../app.html#app.consumer.process_data">[docs]</a>
 <span class="k">def</span> <span class="nf">process_data</span><span class="p">(</span><span class="n">data_payload</span><span class="p">:</span> <span class="n">DataPayload</span><span class="p">,</span> <span class="n">db_session</span><span class="p">:</span> <span class="n">Session</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Process a data payload by calculating mean and standard deviation,</span>
-<span class="sd">    then store the results in the database.</span>
+<span class="sd">    Processes a data payload by calculating mean and standard deviation,</span>
+<span class="sd">    then stores the results in the database.</span>
 
 <span class="sd">    Parameters:</span>
 <span class="sd">        data_payload (DataPayload): The data payload to process.</span>
@@ -142,49 +104,23 @@
 
 
 
-<div class="viewcode-block" id="pull_messages">
-<a class="viewcode-back" href="../../app.html#app.consumer.pull_messages">[docs]</a>
-<span class="k">def</span> <span class="nf">pull_messages</span><span class="p">(</span><span class="n">db_session_factory</span><span class="p">):</span>
+<div class="viewcode-block" id="pubsub_consumer">
+<a class="viewcode-back" href="../../app.html#app.consumer.pubsub_consumer">[docs]</a>
+<span class="k">def</span> <span class="nf">pubsub_consumer</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">db_session</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Continuously pull messages from Pub/Sub and process them.</span>
+<span class="sd">    Google Cloud Function entry point for processing Pub/Sub messages.</span>
 
 <span class="sd">    Parameters:</span>
-<span class="sd">        db_session_factory: Callable that provides a new database session.</span>
+<span class="sd">        event (dict): The Pub/Sub message payload in base64 encoding.</span>
+<span class="sd">        context (google.cloud.functions.Context): Metadata for the event.</span>
+<span class="sd">        db_session (Session, optional): Optional database session for dependency injection.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">subscriber</span> <span class="o">=</span> <span class="n">get_subscriber_client</span><span class="p">()</span>
-    <span class="n">subscription_path</span> <span class="o">=</span> <span class="n">subscriber</span><span class="o">.</span><span class="n">subscription_path</span><span class="p">(</span>
-        <span class="n">project_id</span><span class="p">,</span> <span class="n">subscription_id</span><span class="p">)</span>
-    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-        <span class="n">response</span> <span class="o">=</span> <span class="n">subscriber</span><span class="o">.</span><span class="n">pull</span><span class="p">(</span>
-            <span class="n">request</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;subscription&quot;</span><span class="p">:</span> <span class="n">subscription_path</span><span class="p">,</span> <span class="s2">&quot;max_messages&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">})</span>
-        <span class="k">for</span> <span class="n">received_message</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">received_messages</span><span class="p">:</span>
-            <span class="n">data_payload</span> <span class="o">=</span> <span class="n">DataPayload</span><span class="p">(</span>
-                <span class="o">**</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">received_message</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)))</span>
-            <span class="k">with</span> <span class="n">db_session_factory</span><span class="p">()</span> <span class="k">as</span> <span class="n">db_session</span><span class="p">:</span>
-                <span class="n">process_data</span><span class="p">(</span><span class="n">data_payload</span><span class="p">,</span> <span class="n">db_session</span><span class="p">)</span>
-            <span class="n">subscriber</span><span class="o">.</span><span class="n">acknowledge</span><span class="p">(</span><span class="n">request</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;subscription&quot;</span><span class="p">:</span> <span class="n">subscription_path</span><span class="p">,</span> <span class="s2">&quot;ack_ids&quot;</span><span class="p">:</span> <span class="p">[</span>
-                                   <span class="n">received_message</span><span class="o">.</span><span class="n">ack_id</span><span class="p">]})</span></div>
+    <span class="k">if</span> <span class="n">db_session</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">db_session</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">get_db</span><span class="p">())</span>
+    <span class="n">pubsub_message</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64decode</span><span class="p">(</span><span class="n">event</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+    <span class="n">data_payload</span> <span class="o">=</span> <span class="n">DataPayload</span><span class="p">(</span><span class="o">**</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">pubsub_message</span><span class="p">))</span>
+    <span class="n">process_data</span><span class="p">(</span><span class="n">data_payload</span><span class="p">,</span> <span class="n">db_session</span><span class="p">)</span></div>
 
-
-
-<div class="viewcode-block" id="lifespan">
-<a class="viewcode-back" href="../../app.html#app.consumer.lifespan">[docs]</a>
-<span class="nd">@asynccontextmanager</span>
-<span class="k">async</span> <span class="k">def</span> <span class="nf">lifespan</span><span class="p">(</span><span class="n">app</span><span class="p">:</span> <span class="n">FastAPI</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Lifespan context manager to start and stop the Pub/Sub message pulling.</span>
-
-<span class="sd">    Parameters:</span>
-<span class="sd">        app (FastAPI): FastAPI application instance.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">db_session_factory</span> <span class="o">=</span> <span class="n">get_db</span>  <span class="c1"># Use production session by default</span>
-    <span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">pull_messages</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">db_session_factory</span><span class="p">,))</span>
-    <span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
-    <span class="k">yield</span>
-    <span class="n">thread</span><span class="o">.</span><span class="n">join</span><span class="p">()</span></div>
-
-
-<span class="n">app</span> <span class="o">=</span> <span class="n">FastAPI</span><span class="p">(</span><span class="n">lifespan</span><span class="o">=</span><span class="n">lifespan</span><span class="p">)</span>
 </pre></div>
 
           </div>
