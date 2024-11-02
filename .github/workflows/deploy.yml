@@ -34,6 +34,7 @@ jobs:
         env:
           PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
           PUBSUB_TOPIC: "data-topic"
+          PYTHONPATH: ./src
         run: |
           poetry run pytest
 

@@ -8,9 +8,9 @@ in a test SQLite database.
 import json
 import base64
 import pytest
-from src.consumer.main import process_data, pubsub_consumer, get_db
-from src.consumer.models import ProcessedData
-from src.shared.schema import DataPayload
+from consumer.main import process_data, pubsub_consumer, get_db
+from consumer.models import ProcessedData
+from shared.schema import DataPayload
 from datetime import datetime
 import pytz
 
