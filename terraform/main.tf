@@ -32,20 +32,6 @@ resource "google_pubsub_subscription" "data_subscription" {
   message_retention_duration = "604800s" # 7 days
 }
 
-resource "google_sql_database_instance" "postgres_instance" {
-  name             = "fastapi-postgres"
-  database_version = "POSTGRES_13"
-  region           = var.region
-  settings {
-    tier = "db-g1-small"
-  }
-}
-
-resource "google_sql_database" "app_database" {
-  name     = "appdb"
-  instance = google_sql_database_instance.postgres_instance.name
-}
-
 resource "google_cloud_run_service" "fastapi_service" {
   name     = "fastapi-service"
   location = var.region
@@ -57,4 +43,25 @@ resource "google_cloud_run_service" "fastapi_service" {
     }
   }
   autogenerate_revision_name = true
+}
+
+resource "google_sql_database_instance" "postgres_instance" {
+  name             = "fastapi-postgres"
+  database_version = "POSTGRES_13"
+  region           = var.region
+  settings {
+    tier = "db-g1-small"
+  }
+  root_password = var.db_password
+}
+
+resource "google_sql_database" "app_database" {
+  name     = "appdb"
+  instance = google_sql_database_instance.postgres_instance.name
+}
+
+resource "google_sql_user" "db_user" {
+  name     = var.db_user
+  instance = google_sql_database_instance.postgres_instance.name
+  password = var.db_password
 }

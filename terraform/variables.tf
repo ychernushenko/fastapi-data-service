@@ -13,3 +13,15 @@ variable "region" {
   type        = string
   default     = "us-central1"
 }
+
+# Database credentials
+
+variable "db_user" {
+  description = "PostgreSQL database username"
+  type        = string
+}
+
+variable "db_password" {
+  description = "PostgreSQL database password"
+  type        = string
+}
