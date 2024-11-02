@@ -24,14 +24,16 @@ engine = create_engine(DATABASE_URL, connect_args=connect_args)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Google Pub/Sub configuration
 project_id = os.getenv("PROJECT_ID")
 subscription_id = os.getenv("PUBSUB_SUBSCRIPTION", "data-subscription")
-subscriber = pubsub_v1.SubscriberClient()
-subscription_path = subscriber.subscription_path(project_id, subscription_id)
 
 # Ensure tables are created
 Base.metadata.create_all(bind=engine)
+
+
+def get_subscriber_client():
+    """Initialize and return the Google Pub/Sub subscriber client."""
+    return pubsub_v1.SubscriberClient()
 
 
 def process_data(data_payload: DataPayload):
@@ -73,7 +75,11 @@ def callback(message):
     message.ack()
 
 
-# Subscribe to the Pub/Sub topic
-streaming_pull_future = subscriber.subscribe(
-    subscription_path, callback=callback)
-print(f"Listening for messages on {subscription_path}...")
+def start_subscriber():
+    """Starts the Pub/Sub subscriber."""
+    subscriber = get_subscriber_client()
+    subscription_path = subscriber.subscription_path(
+        project_id, subscription_id)
+    streaming_pull_future = subscriber.subscribe(
+        subscription_path, callback=callback)
+    print(f"Listening for messages on {subscription_path}...")

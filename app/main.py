@@ -13,13 +13,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from google.cloud import storage, pubsub_v1
 from app.schema import DataPayload
 
-# Google Cloud configurations
-storage_client = storage.Client()
 bucket_name = os.getenv("BUCKET_NAME", "fastapi-data-service")
-publisher = pubsub_v1.PublisherClient()
 project_id = os.getenv("PROJECT_ID")
 topic_id = os.getenv("PUBSUB_TOPIC", "data-topic")
-topic_path = publisher.topic_path(project_id, topic_id)
 
 # FastAPI application instance
 app = FastAPI()
@@ -33,6 +29,16 @@ app.add_middleware(
 )
 
 
+def get_storage_client():
+    """Initialize and return the Google Cloud Storage client."""
+    return storage.Client()
+
+
+def get_publisher_client():
+    """Initialize and return the Google Pub/Sub publisher client."""
+    return pubsub_v1.PublisherClient()
+
+
 def upload_to_gcs(data_payload: DataPayload) -> str:
     """
     Uploads the received data payload to Google Cloud Storage.
@@ -43,7 +49,8 @@ def upload_to_gcs(data_payload: DataPayload) -> str:
     Returns:
         str: Path to the stored object in Google Cloud Storage.
     """
-    bucket = storage_client.bucket(bucket_name)
+    client = get_storage_client()
+    bucket = client.bucket(bucket_name)
     blob = bucket.blob(f"data/{datetime.now().isoformat()}.json")
     blob.upload_from_string(json.dumps(data_payload.dict()))
     return blob.name
@@ -56,9 +63,11 @@ def publish_message_to_pubsub(data_payload: DataPayload) -> None:
     Parameters:
         data_payload (DataPayload): The payload to be published to Pub/Sub.
     """
+    client = get_publisher_client()
+    topic_path = client.topic_path(project_id, topic_id)
     message_json = json.dumps(data_payload.dict())
     message_bytes = message_json.encode("utf-8")
-    publisher.publish(topic_path, data=message_bytes)
+    client.publish(topic_path, data=message_bytes)
 
 
 @app.post("/data/")
