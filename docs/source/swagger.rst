@@ -1,4 +1,4 @@
-Swagger API Documentation
+Swagger
 =========================
 
 You can view the `Swagger API Documentation <_static/swagger-ui/index.html>`_.
