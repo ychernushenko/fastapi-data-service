@@ -40,32 +40,86 @@
 </section>
 <section id="module-app.consumer">
 <span id="app-consumer-module"></span><h2>app.consumer module<a class="headerlink" href="#module-app.consumer" title="Link to this heading">¶</a></h2>
-<p>Consumer service for processing messages from Pub/Sub and saving processed
-data to the database.</p>
+<p>Consumer service for processing messages from Pub/Sub and saving processed data to the database.</p>
 <p>This module listens to a Google Pub/Sub topic, processes the received data,
-and stores the processed results in PostgreSQL.</p>
+and stores the processed results in PostgreSQL or an SQLite database for testing.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="app.consumer.get_db">
+<span class="sig-prename descclassname"><span class="pre">app.consumer.</span></span><span class="sig-name descname"><span class="pre">get_db</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/app/consumer.html#get_db"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.consumer.get_db" title="Link to this definition">¶</a></dt>
+<dd><p>Provide a database session for production environment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Yields<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>sqlalchemy.orm.Session</em> – A session bound to the production database.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.consumer.get_engine">
+<span class="sig-prename descclassname"><span class="pre">app.consumer.</span></span><span class="sig-name descname"><span class="pre">get_engine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">database_url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'postgresql://None:None&#64;localhost:5432/appdb'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/app/consumer.html#get_engine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.consumer.get_engine" title="Link to this definition">¶</a></dt>
+<dd><p>Return a database engine.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>database_url</strong> (<em>str</em>) – Database URL to connect to, default is production database.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>SQLAlchemy engine connected to the specified database.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>sqlalchemy.engine.Engine</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="app.consumer.get_subscriber_client">
 <span class="sig-prename descclassname"><span class="pre">app.consumer.</span></span><span class="sig-name descname"><span class="pre">get_subscriber_client</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/app/consumer.html#get_subscriber_client"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.consumer.get_subscriber_client" title="Link to this definition">¶</a></dt>
 <dd><p>Initialize and return the Google Pub/Sub subscriber client.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Google Pub/Sub subscriber client.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pubsub_v1.SubscriberClient</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.consumer.lifespan">
+<span class="sig-prename descclassname"><span class="pre">app.consumer.</span></span><span class="sig-name descname"><span class="pre">lifespan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">FastAPI</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/app/consumer.html#lifespan"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.consumer.lifespan" title="Link to this definition">¶</a></dt>
+<dd><p>Lifespan context manager to start and stop the Pub/Sub message pulling.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>app</strong> (<em>FastAPI</em>) – FastAPI application instance.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="app.consumer.process_data">
-<span class="sig-prename descclassname"><span class="pre">app.consumer.</span></span><span class="sig-name descname"><span class="pre">process_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_payload</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#app.schema.DataPayload" title="app.schema.DataPayload"><span class="pre">DataPayload</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/app/consumer.html#process_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.consumer.process_data" title="Link to this definition">¶</a></dt>
-<dd><p>Processes the payload data by calculating mean and standard deviation,
-then stores the results in the database.</p>
+<span class="sig-prename descclassname"><span class="pre">app.consumer.</span></span><span class="sig-name descname"><span class="pre">process_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_payload</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#app.schema.DataPayload" title="app.schema.DataPayload"><span class="pre">DataPayload</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">db_session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Session</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/app/consumer.html#process_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.consumer.process_data" title="Link to this definition">¶</a></dt>
+<dd><p>Process a data payload by calculating mean and standard deviation,
+then store the results in the database.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>data_payload</strong> (<a class="reference internal" href="#app.schema.DataPayload" title="app.schema.DataPayload"><em>DataPayload</em></a>) – The data payload to process.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_payload</strong> (<a class="reference internal" href="#app.schema.DataPayload" title="app.schema.DataPayload"><em>DataPayload</em></a>) – The data payload to process.</p></li>
+<li><p><strong>db_session</strong> (<em>Session</em>) – The database session used to add and commit data.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="app.consumer.pull_messages">
-<span class="sig-prename descclassname"><span class="pre">app.consumer.</span></span><span class="sig-name descname"><span class="pre">pull_messages</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/app/consumer.html#pull_messages"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.consumer.pull_messages" title="Link to this definition">¶</a></dt>
-<dd><p>Pulls messages from Pub/Sub and processes them.</p>
+<span class="sig-prename descclassname"><span class="pre">app.consumer.</span></span><span class="sig-name descname"><span class="pre">pull_messages</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_session_factory</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/app/consumer.html#pull_messages"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.consumer.pull_messages" title="Link to this definition">¶</a></dt>
+<dd><p>Continuously pull messages from Pub/Sub and process them.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_session_factory</strong> – Callable that provides a new database session.</p>
+</dd>
+</dl>
 </dd></dl>
 
 </section>
