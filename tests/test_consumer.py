@@ -66,18 +66,20 @@ def test_pubsub_consumer(db_session):
         }).encode('utf-8'))
     }
 
-    # Invoke the consumer function
-    pubsub_consumer(event, None)
+    # Use the test database URL in get_db for this test
+    with get_db(TEST_DATABASE_URL) as db:
+        # Invoke the consumer function
+        pubsub_consumer(event, None)
 
-    # Validate data stored in the test database
-    result = db_session.query(ProcessedData).first()
-    expected_mean = 1.3853
-    expected_stddev = 0.9215
+        # Validate data stored in the test database
+        result = db.query(ProcessedData).first()
+        expected_mean = 1.3853
+        expected_stddev = 0.9215
 
-    assert result.mean == pytest.approx(expected_mean, 0.001)
-    assert result.stddev == pytest.approx(expected_stddev, 0.001)
+        assert result.mean == pytest.approx(expected_mean, 0.001)
+        assert result.stddev == pytest.approx(expected_stddev, 0.001)
 
-    # Handle timezone comparison accurately
-    expected_utc_timestamp = datetime(2019, 5, 1, 10, 0, tzinfo=pytz.utc)
-    assert result.utc_timestamp.replace(
-        tzinfo=pytz.utc) == expected_utc_timestamp
+        # Handle timezone comparison accurately
+        expected_utc_timestamp = datetime(2019, 5, 1, 10, 0, tzinfo=pytz.utc)
+        assert result.utc_timestamp.replace(
+            tzinfo=pytz.utc) == expected_utc_timestamp

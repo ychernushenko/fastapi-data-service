@@ -1,10 +1,3 @@
-"""
-Consumer service for processing messages from Pub/Sub and saving processed data to the database.
-
-This module listens to a Google Pub/Sub topic, processes the received data,
-and stores the processed results in PostgreSQL.
-"""
-
 import os
 import json
 import base64
@@ -38,14 +31,14 @@ def get_engine(database_url: str = DATABASE_URL):
     return create_engine(database_url)
 
 
-def get_db():
+def get_db(database_url: str = DATABASE_URL):
     """
-    Provide a database session for the production environment.
+    Provide a database session for the specified environment.
 
     Yields:
         sqlalchemy.orm.Session: A session bound to the specified database.
     """
-    engine = get_engine(DATABASE_URL)
+    engine = get_engine(database_url)
     SessionLocal = sessionmaker(bind=engine)
     Base.metadata.create_all(engine)
     db = SessionLocal()
