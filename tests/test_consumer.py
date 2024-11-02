@@ -1,14 +1,12 @@
 """
 Tests for the consumer processing logic in the data processing service.
 
-Verifies the processing of data payloads, including mean and standard deviation calculations
-and database storage.
+This module verifies the processing of data payloads, including mean and
+standard deviation calculations and database storage.
 """
 
-# test_consumer.py
-
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.consumer import process_data
@@ -17,18 +15,33 @@ from app.models import ProcessedData, Base
 from datetime import datetime
 import pytz
 
-# Setup in-memory SQLite database for testing
-DATABASE_URL = "sqlite:///:memory:"
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Create tables in the in-memory database
-Base.metadata.create_all(bind=engine)
+# Setup in-memory SQLite engine for testing
 
 
-@pytest.fixture
-def db_session():
-    """Provide a clean database session for each test."""
+@pytest.fixture(scope="module")
+def test_engine():
+    """
+    Creates an in-memory SQLite database engine for testing.
+
+    Returns:
+        Engine: An SQLAlchemy engine instance for in-memory SQLite database.
+    """
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(bind=engine)  # Create tables in in-memory SQLite
+    yield engine
+    Base.metadata.drop_all(bind=engine)  # Clean up after tests
+
+
+@pytest.fixture(scope="module")
+def db_session(test_engine):
+    """
+    Provides a SQLAlchemy session connected to the in-memory SQLite database.
+
+    Returns:
+        Session: A session for interacting with the in-memory SQLite database.
+    """
+    SessionLocal = sessionmaker(
+        autocommit=False, autoflush=False, bind=test_engine)
     session = SessionLocal()
     yield session
     session.close()
@@ -44,7 +57,7 @@ def test_process_data_calculations(mock_get_subscriber_client, db_session):
         - Correct values for mean and standard deviation.
         - Proper structure and field values in the `ProcessedData` record.
     """
-    mock_get_subscriber_client.return_value = None  # Ensure pull_messages does not actually run
+    mock_get_subscriber_client.return_value = None  # Avoid actual Pub/Sub calls
 
     # Define a sample data payload with known values
     data_payload = DataPayload(
