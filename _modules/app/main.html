@@ -34,31 +34,23 @@
 <span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Main application file for FastAPI data processing service.</span>
 
-<span class="sd">This module contains the FastAPI app setup and route definitions.</span>
+<span class="sd">This module contains the FastAPI app setup, route definitions, and functions for </span>
+<span class="sd">saving data to Google Cloud Storage and publishing messages to Google Pub/Sub.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">fastapi</span> <span class="kn">import</span> <span class="n">FastAPI</span><span class="p">,</span> <span class="n">Depends</span><span class="p">,</span> <span class="n">HTTPException</span>
-<span class="kn">from</span> <span class="nn">fastapi.middleware.cors</span> <span class="kn">import</span> <span class="n">CORSMiddleware</span>
-<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">create_engine</span>
-<span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="kn">import</span> <span class="n">sessionmaker</span><span class="p">,</span> <span class="n">Session</span>
-<span class="kn">from</span> <span class="nn">app.models</span> <span class="kn">import</span> <span class="n">ProcessedData</span><span class="p">,</span> <span class="n">Base</span>  <span class="c1"># Import Base to create tables</span>
-<span class="kn">from</span> <span class="nn">app.schema</span> <span class="kn">import</span> <span class="n">DataPayload</span>
+<span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">import</span> <span class="nn">statistics</span>
-<span class="kn">import</span> <span class="nn">pytz</span>
+<span class="kn">from</span> <span class="nn">fastapi</span> <span class="kn">import</span> <span class="n">FastAPI</span><span class="p">,</span> <span class="n">HTTPException</span>
+<span class="kn">from</span> <span class="nn">fastapi.middleware.cors</span> <span class="kn">import</span> <span class="n">CORSMiddleware</span>
+<span class="kn">from</span> <span class="nn">google.cloud</span> <span class="kn">import</span> <span class="n">storage</span><span class="p">,</span> <span class="n">pubsub_v1</span>
+<span class="kn">from</span> <span class="nn">app.schema</span> <span class="kn">import</span> <span class="n">DataPayload</span>
 
-<span class="c1"># Database configuration</span>
-<span class="n">DATABASE_URL</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DATABASE_URL&quot;</span><span class="p">,</span> <span class="s2">&quot;sqlite:///./test.db&quot;</span><span class="p">)</span>
-<span class="n">connect_args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;check_same_thread&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span> <span class="k">if</span> <span class="s2">&quot;sqlite&quot;</span> <span class="ow">in</span> <span class="n">DATABASE_URL</span> <span class="k">else</span> <span class="p">{}</span>
-<span class="n">engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="n">DATABASE_URL</span><span class="p">,</span> <span class="n">connect_args</span><span class="o">=</span><span class="n">connect_args</span><span class="p">)</span>
+<span class="n">bucket_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;BUCKET_NAME&quot;</span><span class="p">,</span> <span class="s2">&quot;fastapi-data-service&quot;</span><span class="p">)</span>
+<span class="n">project_id</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;PROJECT_ID&quot;</span><span class="p">)</span>
+<span class="n">topic_id</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;PUBSUB_TOPIC&quot;</span><span class="p">,</span> <span class="s2">&quot;data-topic&quot;</span><span class="p">)</span>
 
-<span class="n">SessionLocal</span> <span class="o">=</span> <span class="n">sessionmaker</span><span class="p">(</span><span class="n">autocommit</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">autoflush</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">bind</span><span class="o">=</span><span class="n">engine</span><span class="p">)</span>
-
-<span class="c1"># Ensure tables are created</span>
-<span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">create_all</span><span class="p">(</span><span class="n">bind</span><span class="o">=</span><span class="n">engine</span><span class="p">)</span>
-
-<span class="c1"># Application instance</span>
+<span class="c1"># FastAPI application instance</span>
 <span class="n">app</span> <span class="o">=</span> <span class="n">FastAPI</span><span class="p">()</span>
 
 <span class="n">app</span><span class="o">.</span><span class="n">add_middleware</span><span class="p">(</span>
@@ -70,47 +62,81 @@
 <span class="p">)</span>
 
 
-<div class="viewcode-block" id="get_db">
-<a class="viewcode-back" href="../../app.html#app.main.get_db">[docs]</a>
-<span class="k">def</span> <span class="nf">get_db</span><span class="p">():</span>
+<div class="viewcode-block" id="get_storage_client">
+<a class="viewcode-back" href="../../app.html#app.main.get_storage_client">[docs]</a>
+<span class="k">def</span> <span class="nf">get_storage_client</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize and return the Google Cloud Storage client.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">storage</span><span class="o">.</span><span class="n">Client</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="get_publisher_client">
+<a class="viewcode-back" href="../../app.html#app.main.get_publisher_client">[docs]</a>
+<span class="k">def</span> <span class="nf">get_publisher_client</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize and return the Google Pub/Sub publisher client.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">pubsub_v1</span><span class="o">.</span><span class="n">PublisherClient</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="upload_to_gcs">
+<a class="viewcode-back" href="../../app.html#app.main.upload_to_gcs">[docs]</a>
+<span class="k">def</span> <span class="nf">upload_to_gcs</span><span class="p">(</span><span class="n">data_payload</span><span class="p">:</span> <span class="n">DataPayload</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Dependency function to provide a database session.</span>
+<span class="sd">    Uploads the received data payload to Google Cloud Storage.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        data_payload (DataPayload): Data received in the request.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: Path to the stored object in Google Cloud Storage.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">db</span> <span class="o">=</span> <span class="n">SessionLocal</span><span class="p">()</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="k">yield</span> <span class="n">db</span>
-    <span class="k">finally</span><span class="p">:</span>
-        <span class="n">db</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+    <span class="n">client</span> <span class="o">=</span> <span class="n">get_storage_client</span><span class="p">()</span>
+    <span class="n">bucket</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">bucket</span><span class="p">(</span><span class="n">bucket_name</span><span class="p">)</span>
+    <span class="n">blob</span> <span class="o">=</span> <span class="n">bucket</span><span class="o">.</span><span class="n">blob</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;data/</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span><span class="si">}</span><span class="s2">.json&quot;</span><span class="p">)</span>
+    <span class="n">blob</span><span class="o">.</span><span class="n">upload_from_string</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data_payload</span><span class="o">.</span><span class="n">dict</span><span class="p">()))</span>
+    <span class="k">return</span> <span class="n">blob</span><span class="o">.</span><span class="n">name</span></div>
+
+
+
+<div class="viewcode-block" id="publish_message_to_pubsub">
+<a class="viewcode-back" href="../../app.html#app.main.publish_message_to_pubsub">[docs]</a>
+<span class="k">def</span> <span class="nf">publish_message_to_pubsub</span><span class="p">(</span><span class="n">data_payload</span><span class="p">:</span> <span class="n">DataPayload</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Publishes the payload data to a Google Pub/Sub topic.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        data_payload (DataPayload): The payload to be published to Pub/Sub.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">client</span> <span class="o">=</span> <span class="n">get_publisher_client</span><span class="p">()</span>
+    <span class="n">topic_path</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">topic_path</span><span class="p">(</span><span class="n">project_id</span><span class="p">,</span> <span class="n">topic_id</span><span class="p">)</span>
+    <span class="n">message_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data_payload</span><span class="o">.</span><span class="n">dict</span><span class="p">())</span>
+    <span class="n">message_bytes</span> <span class="o">=</span> <span class="n">message_json</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+    <span class="n">client</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">topic_path</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">message_bytes</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="receive_data">
 <a class="viewcode-back" href="../../app.html#app.main.receive_data">[docs]</a>
 <span class="nd">@app</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/data/&quot;</span><span class="p">)</span>
-<span class="k">async</span> <span class="k">def</span> <span class="nf">receive_data</span><span class="p">(</span><span class="n">payload</span><span class="p">:</span> <span class="n">DataPayload</span><span class="p">,</span> <span class="n">db</span><span class="p">:</span> <span class="n">Session</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_db</span><span class="p">)):</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">receive_data</span><span class="p">(</span><span class="n">payload</span><span class="p">:</span> <span class="n">DataPayload</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Receives data payload, calculates mean and standard deviation, </span>
-<span class="sd">    and stores it in the database.</span>
+<span class="sd">    Receives data payload, stores it in Google Cloud Storage, and publishes a</span>
+<span class="sd">    message to Pub/Sub.</span>
 
 <span class="sd">    Parameters:</span>
 <span class="sd">        payload (DataPayload): Data received via POST, containing timestamp and data list.</span>
-<span class="sd">        db (Session): SQLAlchemy session dependency.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        dict: A success message with the ID of the stored record.</span>
+<span class="sd">        dict: A success message with the GCS path of the stored object.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">utc_timestamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span>
-            <span class="n">payload</span><span class="o">.</span><span class="n">time_stamp</span><span class="p">,</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">T%H:%M:%S%z&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">pytz</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
-        <span class="n">mean_value</span> <span class="o">=</span> <span class="n">statistics</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
-        <span class="n">stddev_value</span> <span class="o">=</span> <span class="n">statistics</span><span class="o">.</span><span class="n">stdev</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
-        <span class="n">new_data</span> <span class="o">=</span> <span class="n">ProcessedData</span><span class="p">(</span>
-            <span class="n">utc_timestamp</span><span class="o">=</span><span class="n">utc_timestamp</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="n">mean_value</span><span class="p">,</span> <span class="n">stddev</span><span class="o">=</span><span class="n">stddev_value</span>
-        <span class="p">)</span>
-        <span class="n">db</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">new_data</span><span class="p">)</span>
-        <span class="n">db</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
-        <span class="n">db</span><span class="o">.</span><span class="n">refresh</span><span class="p">(</span><span class="n">new_data</span><span class="p">)</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Data processed successfully&quot;</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">new_data</span><span class="o">.</span><span class="n">id</span><span class="p">}</span>
+        <span class="c1"># Save payload to GCS</span>
+        <span class="n">gcs_path</span> <span class="o">=</span> <span class="n">upload_to_gcs</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+        <span class="c1"># Publish message to Pub/Sub</span>
+        <span class="n">publish_message_to_pubsub</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Data received successfully&quot;</span><span class="p">,</span> <span class="s2">&quot;gcs_path&quot;</span><span class="p">:</span> <span class="n">gcs_path</span><span class="p">}</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span></div>
 

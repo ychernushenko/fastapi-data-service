@@ -41,30 +41,62 @@
 <section id="module-app.main">
 <span id="app-main-module"></span><h2>app.main module<a class="headerlink" href="#module-app.main" title="Link to this heading">¶</a></h2>
 <p>Main application file for FastAPI data processing service.</p>
-<p>This module contains the FastAPI app setup and route definitions.</p>
+<p>This module contains the FastAPI app setup, route definitions, and functions for
+saving data to Google Cloud Storage and publishing messages to Google Pub/Sub.</p>
 <dl class="py function">
-<dt class="sig sig-object py" id="app.main.get_db">
-<span class="sig-prename descclassname"><span class="pre">app.main.</span></span><span class="sig-name descname"><span class="pre">get_db</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/app/main.html#get_db"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.main.get_db" title="Link to this definition">¶</a></dt>
-<dd><p>Dependency function to provide a database session.</p>
+<dt class="sig sig-object py" id="app.main.get_publisher_client">
+<span class="sig-prename descclassname"><span class="pre">app.main.</span></span><span class="sig-name descname"><span class="pre">get_publisher_client</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/app/main.html#get_publisher_client"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.main.get_publisher_client" title="Link to this definition">¶</a></dt>
+<dd><p>Initialize and return the Google Pub/Sub publisher client.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.main.get_storage_client">
+<span class="sig-prename descclassname"><span class="pre">app.main.</span></span><span class="sig-name descname"><span class="pre">get_storage_client</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/app/main.html#get_storage_client"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.main.get_storage_client" title="Link to this definition">¶</a></dt>
+<dd><p>Initialize and return the Google Cloud Storage client.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.main.publish_message_to_pubsub">
+<span class="sig-prename descclassname"><span class="pre">app.main.</span></span><span class="sig-name descname"><span class="pre">publish_message_to_pubsub</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_payload</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#app.schema.DataPayload" title="app.schema.DataPayload"><span class="pre">DataPayload</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/app/main.html#publish_message_to_pubsub"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.main.publish_message_to_pubsub" title="Link to this definition">¶</a></dt>
+<dd><p>Publishes the payload data to a Google Pub/Sub topic.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data_payload</strong> (<a class="reference internal" href="#app.schema.DataPayload" title="app.schema.DataPayload"><em>DataPayload</em></a>) – The payload to be published to Pub/Sub.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="app.main.receive_data">
-<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">app.main.</span></span><span class="sig-name descname"><span class="pre">receive_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">payload</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#app.schema.DataPayload" title="app.schema.DataPayload"><span class="pre">DataPayload</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">db</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Session</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Depends(get_db)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/app/main.html#receive_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.main.receive_data" title="Link to this definition">¶</a></dt>
-<dd><p>Receives data payload, calculates mean and standard deviation,
-and stores it in the database.</p>
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">app.main.</span></span><span class="sig-name descname"><span class="pre">receive_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">payload</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#app.schema.DataPayload" title="app.schema.DataPayload"><span class="pre">DataPayload</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/app/main.html#receive_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.main.receive_data" title="Link to this definition">¶</a></dt>
+<dd><p>Receives data payload, stores it in Google Cloud Storage, and publishes a
+message to Pub/Sub.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>payload</strong> (<a class="reference internal" href="#app.schema.DataPayload" title="app.schema.DataPayload"><em>DataPayload</em></a>) – Data received via POST, containing timestamp and data list.</p></li>
-<li><p><strong>db</strong> (<em>Session</em>) – SQLAlchemy session dependency.</p></li>
-</ul>
+<dd class="field-odd"><p><strong>payload</strong> (<a class="reference internal" href="#app.schema.DataPayload" title="app.schema.DataPayload"><em>DataPayload</em></a>) – Data received via POST, containing timestamp and data list.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A success message with the ID of the stored record.</p>
+<dd class="field-even"><p>A success message with the GCS path of the stored object.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.main.upload_to_gcs">
+<span class="sig-prename descclassname"><span class="pre">app.main.</span></span><span class="sig-name descname"><span class="pre">upload_to_gcs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_payload</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#app.schema.DataPayload" title="app.schema.DataPayload"><span class="pre">DataPayload</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/app/main.html#upload_to_gcs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.main.upload_to_gcs" title="Link to this definition">¶</a></dt>
+<dd><p>Uploads the received data payload to Google Cloud Storage.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data_payload</strong> (<a class="reference internal" href="#app.schema.DataPayload" title="app.schema.DataPayload"><em>DataPayload</em></a>) – Data received in the request.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Path to the stored object in Google Cloud Storage.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
 </dd>
 </dl>
 </dd></dl>
