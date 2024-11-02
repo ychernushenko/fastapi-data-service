@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:  
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -31,6 +31,9 @@ jobs:
           poetry install --with dev
       
       - name: Run tests
+        env:
+          PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          PUBSUB_TOPIC: "data-topic"
         run: |
           poetry run pytest
 
@@ -101,7 +104,10 @@ jobs:
         env:
           GOOGLE_CLOUD_KEYFILE_JSON: ${{ secrets.GCP_SA_KEY }}
         run: |
-          terraform apply -auto-approve -var="project_id=${{ vars.GCP_PROJECT_ID }}" -var="region=${{ vars.GCP_REGION }}"
+          terraform apply -auto-approve \
+            -var="project_id=${{ vars.GCP_PROJECT_ID }}" \
+            -var="region=${{ vars.GCP_REGION }}" \
+            -var="pubsub_topic=data-topic"
   
   generate-diagram:
     needs: build-and-tf-apply
@@ -162,6 +168,6 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/terraform-diagram.png
           git commit -m "Update Terraform diagram on gh-pages" || echo "No changes to commit"
-          git push origin gh-pages --force  # Force push to keep only the latest version
+          git push origin gh-pages --force
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

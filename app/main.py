@@ -1,31 +1,27 @@
 """
 Main application file for FastAPI data processing service.
 
-This module contains the FastAPI app setup and route definitions.
+This module contains the FastAPI app setup, route definitions, and functions for 
+saving data to Google Cloud Storage and publishing messages to Google Pub/Sub.
 """
 
 import os
-from fastapi import FastAPI, Depends, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-from app.models import ProcessedData, Base  # Import Base to create tables
-from app.schema import DataPayload
+import json
 from datetime import datetime
-import statistics
-import pytz
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from google.cloud import storage, pubsub_v1
+from app.schema import DataPayload
 
-# Database configuration
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./test.db")
-connect_args = {"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
-engine = create_engine(DATABASE_URL, connect_args=connect_args)
+# Google Cloud configurations
+storage_client = storage.Client()
+bucket_name = os.getenv("BUCKET_NAME", "fastapi-data-service")
+publisher = pubsub_v1.PublisherClient()
+project_id = os.getenv("PROJECT_ID")
+topic_id = os.getenv("PUBSUB_TOPIC", "data-topic")
+topic_path = publisher.topic_path(project_id, topic_id)
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Ensure tables are created
-Base.metadata.create_all(bind=engine)
-
-# Application instance
+# FastAPI application instance
 app = FastAPI()
 
 app.add_middleware(
@@ -37,41 +33,53 @@ app.add_middleware(
 )
 
 
-def get_db():
+def upload_to_gcs(data_payload: DataPayload) -> str:
     """
-    Dependency function to provide a database session.
+    Uploads the received data payload to Google Cloud Storage.
+
+    Parameters:
+        data_payload (DataPayload): Data received in the request.
+
+    Returns:
+        str: Path to the stored object in Google Cloud Storage.
     """
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(f"data/{datetime.now().isoformat()}.json")
+    blob.upload_from_string(json.dumps(data_payload.dict()))
+    return blob.name
+
+
+def publish_message_to_pubsub(data_payload: DataPayload) -> None:
+    """
+    Publishes the payload data to a Google Pub/Sub topic.
+
+    Parameters:
+        data_payload (DataPayload): The payload to be published to Pub/Sub.
+    """
+    message_json = json.dumps(data_payload.dict())
+    message_bytes = message_json.encode("utf-8")
+    publisher.publish(topic_path, data=message_bytes)
 
 
 @app.post("/data/")
-async def receive_data(payload: DataPayload, db: Session = Depends(get_db)):
+async def receive_data(payload: DataPayload):
     """
-    Receives data payload, calculates mean and standard deviation, 
-    and stores it in the database.
+    Receives data payload, stores it in Google Cloud Storage, and publishes a
+    message to Pub/Sub.
 
     Parameters:
         payload (DataPayload): Data received via POST, containing timestamp and data list.
-        db (Session): SQLAlchemy session dependency.
 
     Returns:
-        dict: A success message with the ID of the stored record.
+        dict: A success message with the GCS path of the stored object.
     """
     try:
-        utc_timestamp = datetime.strptime(
-            payload.time_stamp, "%Y-%m-%dT%H:%M:%S%z").astimezone(pytz.utc)
-        mean_value = statistics.mean(payload.data)
-        stddev_value = statistics.stdev(payload.data)
-        new_data = ProcessedData(
-            utc_timestamp=utc_timestamp, mean=mean_value, stddev=stddev_value
-        )
-        db.add(new_data)
-        db.commit()
-        db.refresh(new_data)
-        return {"message": "Data processed successfully", "id": new_data.id}
+        # Save payload to GCS
+        gcs_path = upload_to_gcs(payload)
+
+        # Publish message to Pub/Sub
+        publish_message_to_pubsub(payload)
+
+        return {"message": "Data received successfully", "gcs_path": gcs_path}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
