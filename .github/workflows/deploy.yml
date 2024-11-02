@@ -116,7 +116,7 @@ jobs:
           terraform apply -auto-approve \
             -var="project_id=${{ vars.GCP_PROJECT_ID }}" \
             -var="region=${{ vars.GCP_REGION }}" \
-            -var="db_user=${{ secrets.POSTGRES_USER }}" \
+            -var="db_user=${{ vars.POSTGRES_USER }}" \
             -var="db_password=${{ secrets.POSTGRES_PASSWORD }}"
  
   generate-diagram:
