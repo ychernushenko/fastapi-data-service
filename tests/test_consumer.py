@@ -1,62 +1,81 @@
+import json
 import pytest
+from unittest.mock import patch
+from datetime import datetime
+from app.consumer import process_data, pubsub_consumer, get_db
+from app.schema import DataPayload
+from app.models import ProcessedData
+import pytz
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from app.consumer import process_data
-from app.models import ProcessedData, Base
-from app.schema import DataPayload
-from datetime import datetime
-import pytz
+from app.models import Base
 
-# Define a separate test database URL
+# Use a test database URL for testing
 TEST_DATABASE_URL = "sqlite:///./test.db"
-engine = create_engine(TEST_DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Create tables in the test database
-Base.metadata.create_all(bind=engine)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def db_session():
     """
-    Fixture to provide a clean database session for each test.
+    Fixture to set up a database session for testing, using a test SQLite database.
 
     Yields:
-        Session: SQLAlchemy session for interacting with the test database.
+        sqlalchemy.orm.Session: Database session for the test database.
     """
-    session = SessionLocal()
-    try:
-        yield session
-    finally:
-        session.close()
+    # Create an engine using the test database
+    engine = create_engine(TEST_DATABASE_URL)
+    TestingSessionLocal = sessionmaker(bind=engine)
+    Base.metadata.create_all(engine)
+
+    # Provide a session for the test
+    db = TestingSessionLocal()
+    yield db
+    db.close()
 
 
-def test_process_data_calculations(db_session):
+def test_process_data(db_session):
     """
-    Test the process_data function to ensure correct calculations for mean,
-    standard deviation, and data storage in the test database.
-
-    Parameters:
-        db_session (Session): Database session provided by the fixture.
+    Test process_data function to ensure correct calculations and data storage.
     """
     data_payload = DataPayload(
         time_stamp="2019-05-01T06:00:00-04:00",
         data=[0.379, 1.589, 2.188]
     )
 
-    # Execute the process_data function with the test session
     process_data(data_payload, db_session)
 
-    # Query the database to verify the data insertion
+    # Validate data stored in the test database
     result = db_session.query(ProcessedData).first()
-
-    # Validate calculated mean and standard deviation values
     expected_mean = 1.3853
     expected_stddev = 0.9215
+
     assert result.mean == pytest.approx(expected_mean, 0.001)
     assert result.stddev == pytest.approx(expected_stddev, 0.001)
 
-    # Validate the UTC timestamp conversion, ignoring timezone info
-    expected_utc_timestamp = datetime(
-        2019, 5, 1, 10, 0, tzinfo=pytz.utc).replace(tzinfo=None)
-    assert result.utc_timestamp.replace(tzinfo=None) == expected_utc_timestamp
+    expected_utc_timestamp = datetime(2019, 5, 1, 10, 0, tzinfo=pytz.utc)
+    assert result.utc_timestamp == expected_utc_timestamp
+
+
+def test_pubsub_consumer(db_session):
+    """
+    Test pubsub_consumer function by simulating a Pub/Sub event.
+    """
+    event = {
+        'data': base64.b64encode(json.dumps({
+            "time_stamp": "2019-05-01T06:00:00-04:00",
+            "data": [0.379, 1.589, 2.188]
+        }).encode('utf-8'))
+    }
+
+    with patch("app.consumer.get_db", return_value=iter([db_session])):
+        pubsub_consumer(event, None)
+
+    # Check database insertion
+    result = db_session.query(ProcessedData).first()
+    expected_mean = 1.3853
+    expected_stddev = 0.9215
+
+    assert result.mean == pytest.approx(expected_mean, 0.001)
+    assert result.stddev == pytest.approx(expected_stddev, 0.001)
+    expected_utc_timestamp = datetime(2019, 5, 1, 10, 0, tzinfo=pytz.utc)
+    assert result.utc_timestamp == expected_utc_timestamp

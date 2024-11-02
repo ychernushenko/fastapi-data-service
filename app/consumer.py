@@ -2,11 +2,12 @@
 Consumer service for processing messages from Pub/Sub and saving processed data to the database.
 
 This module listens to a Google Pub/Sub topic, processes the received data,
-and stores the processed results in PostgreSQL or an SQLite database for testing.
+and stores the processed results in PostgreSQL.
 """
 
 import os
 import json
+import base64
 import statistics
 from datetime import datetime
 from google.cloud import pubsub_v1
@@ -14,10 +15,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy import create_engine
 from app.models import ProcessedData, Base
 from app.schema import DataPayload
-from fastapi import FastAPI, Depends
 import pytz
-import threading
-from contextlib import asynccontextmanager
 
 # Database configuration for production
 DB_USER = os.getenv("DB_USER")
@@ -25,56 +23,37 @@ DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
 DB_NAME = os.getenv("DB_NAME", "appdb")
-
 DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 
 def get_engine(database_url: str = DATABASE_URL):
     """
-    Return a database engine.
+    Create and return a SQLAlchemy engine for the database.
 
     Parameters:
-        database_url (str): Database URL to connect to, default is production database.
+        database_url (str): Database URL to connect to, defaults to production database.
 
     Returns:
         sqlalchemy.engine.Engine: SQLAlchemy engine connected to the specified database.
     """
     return create_engine(database_url)
 
-# Dependency to provide a session for the database
-
 
 def get_db():
     """
-    Provide a database session for production environment.
+    Provide a database session for the production environment.
 
     Yields:
-        sqlalchemy.orm.Session: A session bound to the production database.
+        sqlalchemy.orm.Session: A session bound to the specified database.
     """
     engine = get_engine(DATABASE_URL)
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    Base.metadata.create_all(bind=engine)
+    SessionLocal = sessionmaker(bind=engine)
+    Base.metadata.create_all(engine)
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
-
-
-project_id = os.getenv("PROJECT_ID")
-subscription_id = os.getenv("PUBSUB_SUBSCRIPTION", "data-subscription")
-
-app = FastAPI()
-
-
-def get_subscriber_client():
-    """
-    Initialize and return the Google Pub/Sub subscriber client.
-
-    Returns:
-        pubsub_v1.SubscriberClient: Google Pub/Sub subscriber client.
-    """
-    return pubsub_v1.SubscriberClient()
 
 
 def process_data(data_payload: DataPayload, db_session: Session):
@@ -97,40 +76,18 @@ def process_data(data_payload: DataPayload, db_session: Session):
     db_session.refresh(new_data)
 
 
-def pull_messages(db_session_factory):
+def pubsub_consumer(event, context):
     """
-    Continuously pull messages from Pub/Sub and process them.
+    Google Cloud Function entry point for processing Pub/Sub messages.
 
     Parameters:
-        db_session_factory: Callable that provides a new database session.
+        event (dict): The Pub/Sub message payload in base64 encoding.
+        context (google.cloud.functions.Context): Metadata for the event.
     """
-    subscriber = get_subscriber_client()
-    subscription_path = subscriber.subscription_path(
-        project_id, subscription_id)
-    while True:
-        response = subscriber.pull(
-            request={"subscription": subscription_path, "max_messages": 10})
-        for received_message in response.received_messages:
-            data_payload = DataPayload(
-                **json.loads(received_message.message.data.decode("utf-8")))
-            with db_session_factory() as db_session:
-                process_data(data_payload, db_session)
-            subscriber.acknowledge(request={"subscription": subscription_path, "ack_ids": [
-                                   received_message.ack_id]})
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """
-    Lifespan context manager to start and stop the Pub/Sub message pulling.
-
-    Parameters:
-        app (FastAPI): FastAPI application instance.
-    """
-    db_session_factory = get_db  # Use production session by default
-    thread = threading.Thread(target=pull_messages, args=(db_session_factory,))
-    thread.start()
-    yield
-    thread.join()
-
-app = FastAPI(lifespan=lifespan)
+    db = next(get_db())
+    try:
+        pubsub_message = base64.b64decode(event['data']).decode('utf-8')
+        data_payload = DataPayload(**json.loads(pubsub_message))
+        process_data(data_payload, db)
+    finally:
+        db.close()

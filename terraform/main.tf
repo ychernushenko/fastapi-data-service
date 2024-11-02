@@ -59,42 +59,27 @@ resource "google_cloud_run_service" "fastapi_service" {
   autogenerate_revision_name = true
 }
 
-# Cloud Run Service for Consumer
-resource "google_cloud_run_service" "consumer_service" {
-  name     = "consumer-service"
-  location = var.region
-  template {
-    spec {
-      containers {
-        image = "gcr.io/${var.project_id}/consumer-service:latest"
-        env {
-          name  = "DB_USER"
-          value = var.db_user
-        }
-        env {
-          name  = "DB_PASSWORD"
-          value = var.db_password
-        }
-        env {
-          name  = "DB_HOST"
-          value = google_sql_database_instance.postgres_instance.connection_name
-        }
-        env {
-          name  = "DB_NAME"
-          value = google_sql_database.app_database.name
-        }
-        env {
-          name  = "PROJECT_ID"
-          value = var.project_id
-        }
-        env {
-          name  = "PUBSUB_SUBSCRIPTION"
-          value = google_pubsub_subscription.data_subscription.name
-        }
-      }
-    }
+# Google Cloud Function for Consumer
+resource "google_cloudfunctions_function" "consumer_function" {
+  name                  = "consumer-function"
+  runtime               = "python310"
+  entry_point           = "pubsub_consumer"
+  region                = var.region
+  source_archive_bucket = "fastapi-data-service"
+  source_archive_object = "functions-source/consumer-function.zip"
+
+  environment_variables = {
+    DB_USER     = var.db_user
+    DB_PASSWORD = var.db_password
+    DB_HOST     = google_sql_database_instance.postgres_instance.connection_name
+    DB_NAME     = google_sql_database.app_database.name
+    PROJECT_ID  = var.project_id
   }
-  autogenerate_revision_name = true
+
+  event_trigger {
+    event_type = "google.pubsub.topic.publish"
+    resource   = google_pubsub_topic.data_topic.name
+  }
 }
 
 # Cloud SQL PostgreSQL Instance
