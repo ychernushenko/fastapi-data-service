@@ -38,56 +38,6 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">¶</a></h2>
 </section>
-<section id="module-app.consumer">
-<span id="app-consumer-module"></span><h2>app.consumer module<a class="headerlink" href="#module-app.consumer" title="Link to this heading">¶</a></h2>
-<p>Consumer service for processing messages from Pub/Sub and saving processed data to the database.</p>
-<p>This module listens to a Google Pub/Sub topic, processes the received data,
-and stores the processed results in the database.</p>
-<dl class="py function">
-<dt class="sig sig-object py" id="app.consumer.get_db">
-<span class="sig-prename descclassname"><span class="pre">app.consumer.</span></span><span class="sig-name descname"><span class="pre">get_db</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">database_url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'postgresql://None:None&#64;localhost:5432/appdb'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/app/consumer.html#get_db"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.consumer.get_db" title="Link to this definition">¶</a></dt>
-<dd><p>Provides a database session for the specified database URL.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>database_url</strong> (<em>str</em>) – Database URL to connect to. Defaults to production DATABASE_URL.</p>
-</dd>
-<dt class="field-even">Yields<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>sqlalchemy.orm.Session</em> – A session bound to the specified database.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="app.consumer.process_data">
-<span class="sig-prename descclassname"><span class="pre">app.consumer.</span></span><span class="sig-name descname"><span class="pre">process_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_payload</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#app.schema.DataPayload" title="app.schema.DataPayload"><span class="pre">DataPayload</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">db_session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Session</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/app/consumer.html#process_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.consumer.process_data" title="Link to this definition">¶</a></dt>
-<dd><p>Processes a data payload by calculating mean and standard deviation,
-then stores the results in the database.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>data_payload</strong> (<a class="reference internal" href="#app.schema.DataPayload" title="app.schema.DataPayload"><em>DataPayload</em></a>) – The data payload to process.</p></li>
-<li><p><strong>db_session</strong> (<em>Session</em>) – The database session used to add and commit data.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="app.consumer.pubsub_consumer">
-<span class="sig-prename descclassname"><span class="pre">app.consumer.</span></span><span class="sig-name descname"><span class="pre">pubsub_consumer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db_session</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/app/consumer.html#pubsub_consumer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.consumer.pubsub_consumer" title="Link to this definition">¶</a></dt>
-<dd><p>Google Cloud Function entry point for processing Pub/Sub messages.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>event</strong> (<em>dict</em>) – The Pub/Sub message payload in base64 encoding.</p></li>
-<li><p><strong>context</strong> (<em>google.cloud.functions.Context</em>) – Metadata for the event.</p></li>
-<li><p><strong>db_session</strong> (<em>Session</em><em>, </em><em>optional</em>) – Optional database session for dependency injection.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-</section>
 <section id="module-app.main">
 <span id="app-main-module"></span><h2>app.main module<a class="headerlink" href="#module-app.main" title="Link to this heading">¶</a></h2>
 <p>Main application file for FastAPI data processing service.</p>

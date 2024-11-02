@@ -4,14 +4,6 @@ app package
 Submodules
 ----------
 
-app.consumer module
--------------------
-
-.. automodule:: app.consumer
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 app.main module
 ---------------
 
