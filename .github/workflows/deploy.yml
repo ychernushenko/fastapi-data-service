@@ -86,7 +86,7 @@ jobs:
 
       - name: Upload Zip to GCS
         run: |
-          gsutil cp consumer-function.zip gs://fastapi-data-service/functions-source/consumer-function.zip
+          gcloud storage cp consumer-function.zip gs://fastapi-data-service/functions-source/consumer-function.zip
 
       # Build Docker image for FastAPI
       - name: Build fastapi-service Docker image
