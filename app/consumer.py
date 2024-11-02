@@ -15,22 +15,19 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from app.models import ProcessedData, Base  # Import Base to create tables
 from app.schema import DataPayload
+from fastapi import FastAPI
 import pytz
 import time
+import threading
 
-# Database configuration (use SQLite in-memory for testing if environment variables are not set)
+# Database configuration
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
 DB_NAME = os.getenv("DB_NAME", "appdb")
 
-if DB_USER and DB_PASSWORD:
-    DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-else:
-    # Use SQLite in-memory database for tests
-    DATABASE_URL = "sqlite:///:memory:"
-
+DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -39,6 +36,8 @@ subscription_id = os.getenv("PUBSUB_SUBSCRIPTION", "data-subscription")
 
 # Ensure tables are created
 Base.metadata.create_all(bind=engine)
+
+app = FastAPI()
 
 
 def get_subscriber_client():
@@ -54,23 +53,18 @@ def process_data(data_payload: DataPayload):
     Parameters:
         data_payload (DataPayload): The data payload to process.
     """
-    # Convert timestamp to UTC
     utc_timestamp = datetime.strptime(
         data_payload.time_stamp, "%Y-%m-%dT%H:%M:%S%z").astimezone(pytz.utc)
-
-    # Calculate mean and standard deviation
     mean_value = statistics.mean(data_payload.data)
     stddev_value = statistics.stdev(data_payload.data)
 
-    # Store results in database
     db = SessionLocal()
-    new_data = ProcessedData(
-        utc_timestamp=utc_timestamp, mean=mean_value, stddev=stddev_value
-    )
+    new_data = ProcessedData(utc_timestamp=utc_timestamp,
+                             mean=mean_value, stddev=stddev_value)
     db.add(new_data)
     db.commit()
     db.refresh(new_data)
-    db.close()  # Close session after use
+    db.close()
 
 
 def pull_messages():
@@ -81,31 +75,20 @@ def pull_messages():
 
     while True:
         response = subscriber.pull(
-            request={
-                "subscription": subscription_path,
-                "max_messages": 10,  # Adjust the number as needed
-            }
-        )
-
-        if not response.received_messages:
-            print("No new messages. Waiting...")
-            time.sleep(5)  # Wait before polling again
-            continue
+            request={"subscription": subscription_path, "max_messages": 10})
 
         for received_message in response.received_messages:
-            print(f"Received message: {received_message.message.data}")
             data_payload = DataPayload(
                 **json.loads(received_message.message.data.decode("utf-8")))
             process_data(data_payload)
-            subscriber.acknowledge(
-                request={
-                    "subscription": subscription_path,
-                    "ack_ids": [received_message.ack_id],
-                }
-            )
-            print("Message processed and acknowledged.")
+            subscriber.acknowledge(request={"subscription": subscription_path, "ack_ids": [
+                                   received_message.ack_id]})
+
+        time.sleep(5)
 
 
-if __name__ == "__main__":
-    print("Starting pull-based Pub/Sub consumer...")
-    pull_messages()
+@app.on_event("startup")
+def startup_event():
+    """Starts pulling messages in a background thread when the service starts."""
+    thread = threading.Thread(target=pull_messages)
+    thread.start()
