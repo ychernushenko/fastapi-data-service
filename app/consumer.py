@@ -6,22 +6,24 @@ This module listens to a Google Pub/Sub topic, processes the received data,
 and stores the processed results in PostgreSQL.
 """
 
+# consumer.py
+
+from contextlib import asynccontextmanager, contextmanager
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
+from app.models import ProcessedData, Base
+from app.schema import DataPayload
+from fastapi import FastAPI
 import os
 import json
 import statistics
 from datetime import datetime
-from google.cloud import pubsub_v1
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine
-from app.models import ProcessedData, Base  # Import Base to create tables
-from app.schema import DataPayload
-from fastapi import FastAPI
 import pytz
 import time
 import threading
-from contextlib import asynccontextmanager, contextmanager
+from google.cloud import pubsub_v1
 
-# Database configuration
+# Database configuration without TESTING flag
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_HOST = os.getenv("DB_HOST", "localhost")
@@ -29,6 +31,7 @@ DB_PORT = os.getenv("DB_PORT", "5432")
 DB_NAME = os.getenv("DB_NAME", "appdb")
 
 DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -37,6 +40,16 @@ subscription_id = os.getenv("PUBSUB_SUBSCRIPTION", "data-subscription")
 
 # Ensure tables are created
 Base.metadata.create_all(bind=engine)
+
+
+@contextmanager
+def get_db_session():
+    """Provide a database session for use within a context."""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 def get_subscriber_client():
@@ -68,26 +81,12 @@ def process_data(data_payload: DataPayload, db_session):
     db_session.refresh(new_data)
 
 
-@contextmanager
-def get_db_session():
-    """
-    Provides a database session for operations.
-
-    Yields:
-        A database session object.
-    """
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-def pull_messages():
+def pull_messages(db_session_factory=get_db_session):
     """
     Pulls messages from Pub/Sub, processes each message, and stores results in the database.
 
-    Messages are fetched in batches, processed, and acknowledged to the Pub/Sub service.
+    Parameters:
+        db_session_factory: A callable that provides a new database session.
     """
     subscriber = get_subscriber_client()
     subscription_path = subscriber.subscription_path(
@@ -100,7 +99,7 @@ def pull_messages():
         for received_message in response.received_messages:
             data_payload = DataPayload(
                 **json.loads(received_message.message.data.decode("utf-8")))
-            with get_db_session() as db_session:
+            with db_session_factory() as db_session:
                 process_data(data_payload, db_session)
             subscriber.acknowledge(request={"subscription": subscription_path, "ack_ids": [
                                    received_message.ack_id]})
