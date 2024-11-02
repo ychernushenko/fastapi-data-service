@@ -32,6 +32,7 @@ jobs:
 
       - name: Run tests
         env:
+          TESTING: "true"
           PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
           PUBSUB_TOPIC: "data-topic"
         run: |
@@ -139,3 +140,66 @@ jobs:
             -var="pubsub_topic=data-topic" \
             -var="db_user=${{ secrets.POSTGRES_USER }}" \
             -var="db_password=${{ secrets.POSTGRES_PASSWORD }}"
+
+  generate-diagram:
+    needs: build-and-tf-apply
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
+
+      - name: Initialize Terraform
+        working-directory: ./terraform
+        env:
+          GOOGLE_CLOUD_KEYFILE_JSON: ${{ secrets.GCP_SA_KEY }}
+        run: terraform init
+
+      - name: Generate Terraform Graph (DOT format)
+        working-directory: ./terraform
+        env:
+          GOOGLE_CLOUD_KEYFILE_JSON: ${{ secrets.GCP_SA_KEY }}
+        run: terraform graph > terraform-graph.dot
+
+      - name: Install Graphviz
+        run: sudo apt-get install -y graphviz
+
+      - name: Convert DOT to PNG
+        run: dot -Tpng terraform/terraform-graph.dot -o terraform-diagram.png
+
+      - name: Checkout gh-pages branch
+        run: |
+          git fetch origin
+          git checkout gh-pages || git checkout --orphan gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Move Diagram to gh-pages Branch
+        run: |
+          mkdir -p docs
+          mv terraform-diagram.png docs/terraform-diagram.png
+
+      - name: Commit and force push latest diagram to gh-pages
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/terraform-diagram.png
+          git commit -m "Update Terraform diagram on gh-pages" || echo "No changes to commit"
+          git push origin gh-pages --force
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

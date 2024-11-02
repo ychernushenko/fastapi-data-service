@@ -19,15 +19,20 @@ from fastapi import FastAPI
 import pytz
 import time
 import threading
+from contextlib import asynccontextmanager
 
-# Database configuration
+# Database configuration: Use SQLite in-memory database if TESTING is set to true
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
 DB_NAME = os.getenv("DB_NAME", "appdb")
 
-DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+if os.getenv("TESTING") == "true":
+    DATABASE_URL = "sqlite:///:memory:"
+else:
+    DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -36,8 +41,6 @@ subscription_id = os.getenv("PUBSUB_SUBSCRIPTION", "data-subscription")
 
 # Ensure tables are created
 Base.metadata.create_all(bind=engine)
-
-app = FastAPI()
 
 
 def get_subscriber_client():
@@ -87,8 +90,12 @@ def pull_messages():
         time.sleep(5)
 
 
-@app.on_event("startup")
-def startup_event():
-    """Starts pulling messages in a background thread when the service starts."""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager to start and stop the Pub/Sub message pulling."""
     thread = threading.Thread(target=pull_messages)
     thread.start()
+    yield
+    thread.join()
+
+app = FastAPI(lifespan=lifespan)

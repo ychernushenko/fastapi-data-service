@@ -14,7 +14,8 @@ from datetime import datetime
 import pytz
 
 
-@patch("app.consumer.SessionLocal")  # Mock the database session
+@patch("app.consumer.SessionLocal")
+@patch("app.consumer.pull_messages")
 def test_process_data_calculations(mock_db_session):
     """
     Tests the process_data function to ensure correct calculation of mean,
