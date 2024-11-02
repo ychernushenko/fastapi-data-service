@@ -1,35 +1,21 @@
+"""
+Tests for the Pub/Sub consumer and data processing functions in consumer.py.
+
+These tests simulate Pub/Sub events and verify that data is correctly processed and stored
+in a test SQLite database.
+"""
+
 import json
 import base64
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from app.consumer import process_data, pubsub_consumer
-from app.models import ProcessedData, Base
+from app.consumer import process_data, pubsub_consumer, get_db
+from app.models import ProcessedData
 from app.schema import DataPayload
 from datetime import datetime
 import pytz
 
-# Define a separate test database URL
-TEST_DATABASE_URL = "sqlite:///./test.db"
-engine = create_engine(TEST_DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Create tables in the test database
-Base.metadata.create_all(bind=engine)
-
-
-def override_get_db():
-    """
-    Provide a database session for testing with the test database URL.
-
-    Yields:
-        sqlalchemy.orm.Session: A session bound to the test database.
-    """
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# Set up a test database URL with SQLite
+TEST_DATABASE_URL = "sqlite:///:memory:"
 
 
 def test_process_data():
@@ -37,20 +23,20 @@ def test_process_data():
     Test the process_data function to ensure correct calculations for mean,
     standard deviation, and data storage in the test database.
     """
-    data_payload = DataPayload(
-        time_stamp="2019-05-01T06:00:00-04:00",
-        data=[0.379, 1.589, 2.188]
-    )
+    # Initialize the test database session using get_db
+    db = next(get_db(TEST_DATABASE_URL))
 
-    # Use the test database session directly
-    db = next(override_get_db())
     try:
+        data_payload = DataPayload(
+            time_stamp="2019-05-01T06:00:00-04:00",
+            data=[0.379, 1.589, 2.188]
+        )
+
+        # Call process_data with the test session
         process_data(data_payload, db)
 
-        # Query the database to verify the data insertion
+        # Query the database to verify data insertion
         result = db.query(ProcessedData).first()
-
-        # Validate calculated mean and standard deviation values
         expected_mean = 1.3853
         expected_stddev = 0.9215
         assert result.mean == pytest.approx(expected_mean, 0.001)
@@ -62,31 +48,31 @@ def test_process_data():
         assert result.utc_timestamp.replace(
             tzinfo=None) == expected_utc_timestamp
     finally:
-        db.close()
+        db.close()  # Ensure the session is closed after the test
 
 
 def test_pubsub_consumer():
     """
-    Test pubsub_consumer function by simulating a Pub/Sub event.
-
-    This test checks if the function correctly decodes, processes, and
-    stores data in the database.
+    Test the pubsub_consumer function by simulating a Pub/Sub event.
+    This test checks if the function correctly decodes, processes, and stores data in the database.
     """
-    # Simulate Pub/Sub event with base64 encoded data
-    event = {
-        'data': base64.b64encode(json.dumps({
-            "time_stamp": "2019-05-01T06:00:00-04:00",
-            "data": [0.379, 1.589, 2.188]
-        }).encode('utf-8'))
-    }
+    # Initialize the test database session using get_db
+    db = next(get_db(TEST_DATABASE_URL))
 
-    # Use the test database session directly
-    db = next(override_get_db())
     try:
-        pubsub_consumer(event, None)
+        # Simulate Pub/Sub event with base64 encoded data
+        event = {
+            'data': base64.b64encode(json.dumps({
+                "time_stamp": "2019-05-01T06:00:00-04:00",
+                "data": [0.379, 1.589, 2.188]
+            }).encode('utf-8'))
+        }
 
-        # Query the database to verify data insertion
+        # Call pubsub_consumer with the test session
+        pubsub_consumer(event, None, db_session=db)
+
+        # Verify data was inserted in the database
         result = db.query(ProcessedData).first()
         assert result is not None
     finally:
-        db.close()
+        db.close()  # Ensure the session is closed after the test

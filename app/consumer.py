@@ -2,7 +2,7 @@
 Consumer service for processing messages from Pub/Sub and saving processed data to the database.
 
 This module listens to a Google Pub/Sub topic, processes the received data,
-and stores the processed results in PostgreSQL.
+and stores the processed results in the database.
 """
 
 import os
@@ -16,7 +16,7 @@ from app.models import ProcessedData, Base
 from app.schema import DataPayload
 import pytz
 
-# Database configuration for production
+# Production database configuration
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_HOST = os.getenv("DB_HOST", "localhost")
@@ -25,29 +25,19 @@ DB_NAME = os.getenv("DB_NAME", "appdb")
 DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 
-def get_engine(database_url: str = DATABASE_URL):
+def get_db(database_url: str = DATABASE_URL):
     """
-    Create and return a SQLAlchemy engine for the database.
+    Provides a database session for the specified database URL.
 
     Parameters:
-        database_url (str): Database URL to connect to, defaults to production database.
-
-    Returns:
-        sqlalchemy.engine.Engine: SQLAlchemy engine connected to the specified database.
-    """
-    return create_engine(database_url)
-
-
-def get_db():
-    """
-    Provide a database session.
+        database_url (str): Database URL to connect to. Defaults to production DATABASE_URL.
 
     Yields:
         sqlalchemy.orm.Session: A session bound to the specified database.
     """
-    engine = get_engine()
-    SessionLocal = sessionmaker(bind=engine)
-    Base.metadata.create_all(engine)
+    engine = create_engine(database_url)
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
         yield db
@@ -57,8 +47,8 @@ def get_db():
 
 def process_data(data_payload: DataPayload, db_session: Session):
     """
-    Process a data payload by calculating mean and standard deviation,
-    then store the results in the database.
+    Processes a data payload by calculating mean and standard deviation,
+    then stores the results in the database.
 
     Parameters:
         data_payload (DataPayload): The data payload to process.
@@ -75,18 +65,17 @@ def process_data(data_payload: DataPayload, db_session: Session):
     db_session.refresh(new_data)
 
 
-def pubsub_consumer(event, context):
+def pubsub_consumer(event, context, db_session=None):
     """
     Google Cloud Function entry point for processing Pub/Sub messages.
 
     Parameters:
         event (dict): The Pub/Sub message payload in base64 encoding.
         context (google.cloud.functions.Context): Metadata for the event.
+        db_session (Session, optional): Optional database session for dependency injection.
     """
-    db = next(get_db())
-    try:
-        pubsub_message = base64.b64decode(event['data']).decode('utf-8')
-        data_payload = DataPayload(**json.loads(pubsub_message))
-        process_data(data_payload, db)
-    finally:
-        db.close()
+    if db_session is None:
+        db_session = next(get_db())
+    pubsub_message = base64.b64decode(event['data']).decode('utf-8')
+    data_payload = DataPayload(**json.loads(pubsub_message))
+    process_data(data_payload, db_session)
