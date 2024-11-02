@@ -7,7 +7,6 @@ data directly to Google Pub/Sub without storing it in Cloud Storage.
 
 import os
 import json
-from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from google.cloud import pubsub_v1
