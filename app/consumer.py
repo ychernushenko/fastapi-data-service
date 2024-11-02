@@ -97,5 +97,6 @@ def pull_messages():
             print("Message processed and acknowledged.")
 
 
-# Start message pulling immediately when the script is executed
-pull_messages()
+if __name__ == "__main__":
+    print("Starting pull-based Pub/Sub consumer...")
+    pull_messages()

@@ -33,7 +33,8 @@ jobs:
       - name: Run tests
         env:
           PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
-          PUBSUB_TOPIC: "data-topic"
+          PUBSUB_TOPIC: "data-topic"  # Mock value for testing
+          PUBSUB_SUBSCRIPTION: "data-subscription"  # Mock value for testing
         run: |
           poetry run pytest
 
