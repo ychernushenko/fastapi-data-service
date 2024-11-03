@@ -7,8 +7,8 @@ data is correctly published to Google Pub/Sub when a valid request is made.
 
 from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
-from consumer import app
-from shared.schema import DataPayload
+from fastapi import app
+from fastapi.schema import DataPayload
 import json
 
 client = TestClient(app)

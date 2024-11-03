@@ -10,7 +10,7 @@ import base64
 import pytest
 from consumer.main import process_data, pubsub_consumer, get_db
 from consumer.models import ProcessedData
-from shared.schema import DataPayload
+from consumer.schema import DataPayload
 from datetime import datetime
 import pytz
 

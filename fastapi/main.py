@@ -10,7 +10,7 @@ import json
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from google.cloud import pubsub_v1
-from shared.schema import DataPayload
+from schema import DataPayload
 
 project_id = os.getenv("PROJECT_ID")
 topic_id = os.getenv("PUBSUB_TOPIC", "data-topic")
