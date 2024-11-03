@@ -86,7 +86,7 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           cd src/consumer 
           poetry export -f requirements.txt --output requirements.txt --without-hashes
-          zip -r ../consumer-function.zip *
+          zip -r ../../consumer-function.zip *
 
       - name: Upload Zip to GCS
         run: |
