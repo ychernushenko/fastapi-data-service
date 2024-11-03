@@ -4,4 +4,5 @@ App
 .. toctree::
    :maxdepth: 4
 
-   app
+   fastapi_app
+   consumer
