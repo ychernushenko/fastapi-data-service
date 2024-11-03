@@ -23,13 +23,6 @@ DB_NAME = os.getenv("DB_NAME", "appdb")
 DB_HOST = os.getenv("DB_HOST")  # This should be the instance connection name
 CLOUD_SQL_DATABASE_URL = f"postgresql+pg8000://"
 
-# Initialize the Cloud SQL Connector only if running in production
-try:
-    from google.cloud.sql.connector import Connector
-    connector = Connector()
-except ImportError:
-    connector = None  # Set to None for test environments
-
 
 def get_db(database_url: str = CLOUD_SQL_DATABASE_URL):
     """
@@ -50,10 +43,9 @@ def get_db(database_url: str = CLOUD_SQL_DATABASE_URL):
         engine = create_engine(database_url, connect_args={
                                "check_same_thread": False})
     else:
-        # Use Cloud SQL Connector for production
-        if connector is None:
-            raise RuntimeError(
-                "Cloud SQL Connector not initialized. Ensure proper environment setup for production.")
+        # Import and initialize Connector only in production environment
+        from google.cloud.sql.connector import Connector
+        connector = Connector()
 
         def getconn():
             return connector.connect(
