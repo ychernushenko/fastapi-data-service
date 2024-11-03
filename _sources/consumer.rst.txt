@@ -1,0 +1,37 @@
+consumer package
+================
+
+Submodules
+----------
+
+consumer.main module
+--------------------
+
+.. automodule:: consumer.main
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+consumer.models module
+----------------------
+
+.. automodule:: consumer.models
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+consumer.schema module
+----------------------
+
+.. automodule:: consumer.schema
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: consumer
+   :members:
+   :undoc-members:
+   :show-inheritance:

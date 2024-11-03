@@ -53,7 +53,7 @@ data directly to Google Pub/Sub without storing it in Cloud Storage.</p>
 <dd><p>Publishes the payload data to a Google Pub/Sub topic.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>data_payload</strong> (<a class="reference internal" href="#fastapi_app.schema.DataPayload" title="fastapi_app.schema.DataPayload"><em>DataPayload</em></a>) – The payload to be published to Pub/Sub.</p>
+<dd class="field-odd"><p><strong>data_payload</strong> (<a class="reference internal" href="consumer.html#consumer.schema.DataPayload" title="consumer.schema.DataPayload"><em>DataPayload</em></a>) – The payload to be published to Pub/Sub.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -64,7 +64,7 @@ data directly to Google Pub/Sub without storing it in Cloud Storage.</p>
 <dd><p>Receives data payload and publishes it directly to Pub/Sub.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>payload</strong> (<a class="reference internal" href="#fastapi_app.schema.DataPayload" title="fastapi_app.schema.DataPayload"><em>DataPayload</em></a>) – Data received via POST, containing timestamp and data list.</p>
+<dd class="field-odd"><p><strong>payload</strong> (<a class="reference internal" href="consumer.html#consumer.schema.DataPayload" title="consumer.schema.DataPayload"><em>DataPayload</em></a>) – Data received via POST, containing timestamp and data list.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A success message confirming message publication.</p>
