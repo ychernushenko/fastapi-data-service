@@ -3,6 +3,13 @@ terraform {
     bucket = "fastapi-data-service"
     prefix = "terraform/state"
   }
+
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = ">= 6.9.0"
+    }
+  }
 }
 
 provider "google" {
@@ -57,14 +64,22 @@ resource "google_cloud_run_service" "fastapi_service" {
     }
   }
   autogenerate_revision_name = true
+
+  # Disable unauthenticated access
+  traffic {
+    percent         = 100
+    latest_revision = true
+  }
 }
 
-resource "google_cloud_run_service_iam_member" "fastapi_invoker" {
+resource "google_cloud_run_service_iam_binding" "fastapi_invoker" {
   project  = var.project_id
   location = var.region
   service  = google_cloud_run_service.fastapi_service.name
   role     = "roles/run.invoker"
-  member   = "user:y.chernushenko@gmail.com"
+  members = [
+    "user:y.chernushenko@gmail.com",
+  ]
 }
 
 # Google Cloud Function for Consumer
