@@ -43,37 +43,59 @@
 <span class="kn">import</span> <span class="nn">base64</span>
 <span class="kn">import</span> <span class="nn">statistics</span>
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">import</span> <span class="nn">pytz</span>
 <span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="kn">import</span> <span class="n">Session</span><span class="p">,</span> <span class="n">sessionmaker</span>
 <span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">create_engine</span>
 <span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">ProcessedData</span><span class="p">,</span> <span class="n">Base</span>
 <span class="kn">from</span> <span class="nn">.schema</span> <span class="kn">import</span> <span class="n">DataPayload</span>
-<span class="kn">import</span> <span class="nn">pytz</span>
 
-<span class="c1"># Production database configuration</span>
+<span class="c1"># Production database configuration from environment variables</span>
 <span class="n">DB_USER</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DB_USER&quot;</span><span class="p">)</span>
 <span class="n">DB_PASSWORD</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DB_PASSWORD&quot;</span><span class="p">)</span>
 <span class="n">DB_NAME</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DB_NAME&quot;</span><span class="p">,</span> <span class="s2">&quot;appdb&quot;</span><span class="p">)</span>
-<span class="n">DB_HOST</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DB_HOST&quot;</span><span class="p">,</span> <span class="s2">&quot;localhost&quot;</span><span class="p">)</span>
-<span class="n">DB_PORT</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DB_PORT&quot;</span><span class="p">,</span> <span class="s2">&quot;5432&quot;</span><span class="p">)</span>
-<span class="n">DATABASE_URL</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;postgresql://</span><span class="si">{</span><span class="n">DB_USER</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">DB_PASSWORD</span><span class="si">}</span><span class="s2">@/</span><span class="si">{</span><span class="n">DB_NAME</span><span class="si">}</span><span class="s2">?host=</span><span class="si">{</span><span class="n">DB_HOST</span><span class="si">}</span><span class="s2">&amp;port=</span><span class="si">{</span><span class="n">DB_PORT</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="n">DB_HOST</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DB_HOST&quot;</span><span class="p">)</span>  <span class="c1"># This should be the instance connection name</span>
+<span class="n">CLOUD_SQL_DATABASE_URL</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;postgresql+pg8000://&quot;</span>
 
 
 <div class="viewcode-block" id="get_db">
 <a class="viewcode-back" href="../../consumer.html#consumer.main.get_db">[docs]</a>
-<span class="k">def</span> <span class="nf">get_db</span><span class="p">(</span><span class="n">database_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DATABASE_URL</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">get_db</span><span class="p">(</span><span class="n">database_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">CLOUD_SQL_DATABASE_URL</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Provides a database session for the specified database URL.</span>
 
+<span class="sd">    If the database URL is the default (Cloud SQL), it connects using the Google Cloud SQL Connector</span>
+<span class="sd">    to securely connect to the Cloud SQL instance. For testing, an SQLite database URL can be provided</span>
+<span class="sd">    to run tests without connecting to Cloud SQL.</span>
+
 <span class="sd">    Parameters:</span>
-<span class="sd">        database_url (str): Database URL to connect to. Defaults to production DATABASE_URL.</span>
+<span class="sd">        database_url (str): The database URL to connect to.</span>
 
 <span class="sd">    Yields:</span>
 <span class="sd">        sqlalchemy.orm.Session: A session bound to the specified database.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="n">database_url</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;sqlite&quot;</span> <span class="ow">in</span> <span class="n">database_url</span><span class="p">:</span>
+        <span class="c1"># Use SQLite for testing</span>
+        <span class="n">engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="n">database_url</span><span class="p">,</span> <span class="n">connect_args</span><span class="o">=</span><span class="p">{</span>
+                               <span class="s2">&quot;check_same_thread&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Import and initialize Connector only in production environment</span>
+        <span class="kn">from</span> <span class="nn">google.cloud.sql.connector</span> <span class="kn">import</span> <span class="n">Connector</span>
+        <span class="n">connector</span> <span class="o">=</span> <span class="n">Connector</span><span class="p">()</span>
+
+        <span class="k">def</span> <span class="nf">getconn</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">connector</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+                <span class="n">DB_HOST</span><span class="p">,</span>  <span class="c1"># Instance connection name</span>
+                <span class="s2">&quot;pg8000&quot;</span><span class="p">,</span>  <span class="c1"># Use the pg8000 driver for PostgreSQL</span>
+                <span class="n">user</span><span class="o">=</span><span class="n">DB_USER</span><span class="p">,</span>
+                <span class="n">password</span><span class="o">=</span><span class="n">DB_PASSWORD</span><span class="p">,</span>
+                <span class="n">db</span><span class="o">=</span><span class="n">DB_NAME</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="n">CLOUD_SQL_DATABASE_URL</span><span class="p">,</span> <span class="n">creator</span><span class="o">=</span><span class="n">getconn</span><span class="p">)</span>
+
     <span class="n">SessionLocal</span> <span class="o">=</span> <span class="n">sessionmaker</span><span class="p">(</span><span class="n">autocommit</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">autoflush</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">bind</span><span class="o">=</span><span class="n">engine</span><span class="p">)</span>
-    <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">create_all</span><span class="p">(</span><span class="n">bind</span><span class="o">=</span><span class="n">engine</span><span class="p">)</span>
-    <span class="n">db</span> <span class="o">=</span> <span class="n">SessionLocal</span><span class="p">()</span>
+    <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">create_all</span><span class="p">(</span><span class="n">bind</span><span class="o">=</span><span class="n">engine</span><span class="p">)</span>  <span class="c1"># Create tables if they don&#39;t exist</span>
+
+    <span class="n">db</span> <span class="o">=</span> <span class="n">SessionLocal</span><span class="p">()</span>  <span class="c1"># Create a new session</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">yield</span> <span class="n">db</span>
     <span class="k">finally</span><span class="p">:</span>
@@ -85,22 +107,32 @@
 <a class="viewcode-back" href="../../consumer.html#consumer.main.process_data">[docs]</a>
 <span class="k">def</span> <span class="nf">process_data</span><span class="p">(</span><span class="n">data_payload</span><span class="p">:</span> <span class="n">DataPayload</span><span class="p">,</span> <span class="n">db_session</span><span class="p">:</span> <span class="n">Session</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Processes a data payload by calculating mean and standard deviation,</span>
+<span class="sd">    Processes a data payload by calculating the mean and standard deviation,</span>
 <span class="sd">    then stores the results in the database.</span>
 
 <span class="sd">    Parameters:</span>
-<span class="sd">        data_payload (DataPayload): The data payload to process.</span>
+<span class="sd">        data_payload (DataPayload): The data payload object to process.</span>
 <span class="sd">        db_session (Session): The database session used to add and commit data.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If the data list in data_payload is empty or invalid.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Parse the timestamp and convert to UTC</span>
     <span class="n">utc_timestamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span>
-        <span class="n">data_payload</span><span class="o">.</span><span class="n">time_stamp</span><span class="p">,</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">T%H:%M:%S%z&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">pytz</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+        <span class="n">data_payload</span><span class="o">.</span><span class="n">time_stamp</span><span class="p">,</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">T%H:%M:%S%z&quot;</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">pytz</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+
+    <span class="c1"># Calculate mean and standard deviation for the data</span>
     <span class="n">mean_value</span> <span class="o">=</span> <span class="n">statistics</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">data_payload</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
     <span class="n">stddev_value</span> <span class="o">=</span> <span class="n">statistics</span><span class="o">.</span><span class="n">stdev</span><span class="p">(</span><span class="n">data_payload</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="c1"># Create a new ProcessedData entry</span>
     <span class="n">new_data</span> <span class="o">=</span> <span class="n">ProcessedData</span><span class="p">(</span>
-        <span class="n">utc_timestamp</span><span class="o">=</span><span class="n">utc_timestamp</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="n">mean_value</span><span class="p">,</span> <span class="n">stddev</span><span class="o">=</span><span class="n">stddev_value</span><span class="p">)</span>
+        <span class="n">utc_timestamp</span><span class="o">=</span><span class="n">utc_timestamp</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="n">mean_value</span><span class="p">,</span> <span class="n">stddev</span><span class="o">=</span><span class="n">stddev_value</span>
+    <span class="p">)</span>
     <span class="n">db_session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">new_data</span><span class="p">)</span>
     <span class="n">db_session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
-    <span class="n">db_session</span><span class="o">.</span><span class="n">refresh</span><span class="p">(</span><span class="n">new_data</span><span class="p">)</span></div>
+    <span class="n">db_session</span><span class="o">.</span><span class="n">refresh</span><span class="p">(</span><span class="n">new_data</span><span class="p">)</span>  <span class="c1"># Refresh to get the updated instance</span></div>
 
 
 
@@ -110,15 +142,27 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Google Cloud Function entry point for processing Pub/Sub messages.</span>
 
+<span class="sd">    This function decodes the base64-encoded Pub/Sub message payload, parses it into</span>
+<span class="sd">    a DataPayload object, and processes the data by calculating statistical metrics,</span>
+<span class="sd">    which are then stored in the database.</span>
+
 <span class="sd">    Parameters:</span>
 <span class="sd">        event (dict): The Pub/Sub message payload in base64 encoding.</span>
 <span class="sd">        context (google.cloud.functions.Context): Metadata for the event.</span>
 <span class="sd">        db_session (Session, optional): Optional database session for dependency injection.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If the message data is not properly formatted or fails to parse.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">db_session</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Get a new database session if none is provided</span>
         <span class="n">db_session</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">get_db</span><span class="p">())</span>
+
+    <span class="c1"># Decode and parse the Pub/Sub message</span>
     <span class="n">pubsub_message</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64decode</span><span class="p">(</span><span class="n">event</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
     <span class="n">data_payload</span> <span class="o">=</span> <span class="n">DataPayload</span><span class="p">(</span><span class="o">**</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">pubsub_message</span><span class="p">))</span>
+
+    <span class="c1"># Process the data and store in the database</span>
     <span class="n">process_data</span><span class="p">(</span><span class="n">data_payload</span><span class="p">,</span> <span class="n">db_session</span><span class="p">)</span></div>
 
 </pre></div>
