@@ -43,7 +43,7 @@ jobs:
 
       - name: Generate API documentation with sphinx-apidoc
         run: |
-          poetry run sphinx-apidoc -o docs/source src
+          poetry run sphinx-apidoc -o docs/source fastapi consumer
 
       - name: Build Sphinx docs
         run: |
@@ -84,13 +84,9 @@ jobs:
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          cd src/consumer 
+          cd consumer 
           poetry export -f requirements.txt --output requirements.txt --without-hashes
-          cp main.py models.py requirements.txt ../../temp_function_package/
-          cp -r ../shared ../../temp_function_package/shared
-          cd ../../temp_function_package
           zip -r ../consumer-function.zip *
-
 
       - name: Upload Zip to GCS
         run: |
