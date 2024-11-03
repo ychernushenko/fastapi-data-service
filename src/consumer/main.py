@@ -13,12 +13,8 @@ from datetime import datetime
 import pytz
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy import create_engine
-from google.cloud.sql.connector import Connector
 from .models import ProcessedData, Base
 from .schema import DataPayload
-
-# Initialize the Cloud SQL Connector
-connector = Connector()
 
 # Production database configuration from environment variables
 DB_USER = os.getenv("DB_USER")
@@ -26,6 +22,13 @@ DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_NAME = os.getenv("DB_NAME", "appdb")
 DB_HOST = os.getenv("DB_HOST")  # This should be the instance connection name
 CLOUD_SQL_DATABASE_URL = f"postgresql+pg8000://"
+
+# Initialize the Cloud SQL Connector only if running in production
+try:
+    from google.cloud.sql.connector import Connector
+    connector = Connector()
+except ImportError:
+    connector = None  # Set to None for test environments
 
 
 def get_db(database_url: str = CLOUD_SQL_DATABASE_URL):
@@ -48,6 +51,10 @@ def get_db(database_url: str = CLOUD_SQL_DATABASE_URL):
                                "check_same_thread": False})
     else:
         # Use Cloud SQL Connector for production
+        if connector is None:
+            raise RuntimeError(
+                "Cloud SQL Connector not initialized. Ensure proper environment setup for production.")
+
         def getconn():
             return connector.connect(
                 DB_HOST,  # Instance connection name
