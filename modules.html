@@ -14,7 +14,7 @@
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Swagger" href="swagger.html" />
+    <link rel="next" title="fastapi_app package" href="fastapi_app.html" />
     <link rel="prev" title="FastAPI Data Service Documentation" href="index.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
@@ -36,6 +36,70 @@
   <section id="app">
 <h1>App<a class="headerlink" href="#app" title="Link to this heading">¶</a></h1>
 <div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="fastapi_app.html">fastapi_app package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="fastapi_app.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fastapi_app.html#module-fastapi_app.main">fastapi_app.main module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="fastapi_app.html#fastapi_app.main.get_publisher_client"><code class="docutils literal notranslate"><span class="pre">get_publisher_client()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fastapi_app.html#fastapi_app.main.publish_message_to_pubsub"><code class="docutils literal notranslate"><span class="pre">publish_message_to_pubsub()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fastapi_app.html#fastapi_app.main.receive_data"><code class="docutils literal notranslate"><span class="pre">receive_data()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="fastapi_app.html#module-fastapi_app.schema">fastapi_app.schema module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="fastapi_app.html#fastapi_app.schema.DataPayload"><code class="docutils literal notranslate"><span class="pre">DataPayload</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fastapi_app.html#fastapi_app.schema.DataPayload.time_stamp"><code class="docutils literal notranslate"><span class="pre">DataPayload.time_stamp</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fastapi_app.html#fastapi_app.schema.DataPayload.data"><code class="docutils literal notranslate"><span class="pre">DataPayload.data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fastapi_app.html#id0"><code class="docutils literal notranslate"><span class="pre">DataPayload.data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fastapi_app.html#fastapi_app.schema.DataPayload.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">DataPayload.model_computed_fields</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fastapi_app.html#fastapi_app.schema.DataPayload.model_config"><code class="docutils literal notranslate"><span class="pre">DataPayload.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fastapi_app.html#fastapi_app.schema.DataPayload.model_fields"><code class="docutils literal notranslate"><span class="pre">DataPayload.model_fields</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fastapi_app.html#id1"><code class="docutils literal notranslate"><span class="pre">DataPayload.time_stamp</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="fastapi_app.html#module-fastapi_app">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="consumer.html">consumer package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="consumer.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="consumer.html#module-consumer.main">consumer.main module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="consumer.html#consumer.main.get_db"><code class="docutils literal notranslate"><span class="pre">get_db()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="consumer.html#consumer.main.process_data"><code class="docutils literal notranslate"><span class="pre">process_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="consumer.html#consumer.main.pubsub_consumer"><code class="docutils literal notranslate"><span class="pre">pubsub_consumer()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="consumer.html#module-consumer.models">consumer.models module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="consumer.html#consumer.models.ProcessedData"><code class="docutils literal notranslate"><span class="pre">ProcessedData</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="consumer.html#consumer.models.ProcessedData.id"><code class="docutils literal notranslate"><span class="pre">ProcessedData.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="consumer.html#consumer.models.ProcessedData.utc_timestamp"><code class="docutils literal notranslate"><span class="pre">ProcessedData.utc_timestamp</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="consumer.html#consumer.models.ProcessedData.mean"><code class="docutils literal notranslate"><span class="pre">ProcessedData.mean</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="consumer.html#consumer.models.ProcessedData.stddev"><code class="docutils literal notranslate"><span class="pre">ProcessedData.stddev</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="consumer.html#id0"><code class="docutils literal notranslate"><span class="pre">ProcessedData.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="consumer.html#id1"><code class="docutils literal notranslate"><span class="pre">ProcessedData.mean</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="consumer.html#id2"><code class="docutils literal notranslate"><span class="pre">ProcessedData.stddev</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="consumer.html#id3"><code class="docutils literal notranslate"><span class="pre">ProcessedData.utc_timestamp</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="consumer.html#module-consumer.schema">consumer.schema module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="consumer.html#consumer.schema.DataPayload"><code class="docutils literal notranslate"><span class="pre">DataPayload</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="consumer.html#consumer.schema.DataPayload.time_stamp"><code class="docutils literal notranslate"><span class="pre">DataPayload.time_stamp</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="consumer.html#consumer.schema.DataPayload.data"><code class="docutils literal notranslate"><span class="pre">DataPayload.data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="consumer.html#id4"><code class="docutils literal notranslate"><span class="pre">DataPayload.data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="consumer.html#consumer.schema.DataPayload.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">DataPayload.model_computed_fields</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="consumer.html#consumer.schema.DataPayload.model_config"><code class="docutils literal notranslate"><span class="pre">DataPayload.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="consumer.html#consumer.schema.DataPayload.model_fields"><code class="docutils literal notranslate"><span class="pre">DataPayload.model_fields</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="consumer.html#id5"><code class="docutils literal notranslate"><span class="pre">DataPayload.time_stamp</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="consumer.html#module-consumer">Module contents</a></li>
+</ul>
+</li>
+</ul>
 </div>
 </section>
 
@@ -67,7 +131,9 @@
 <script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
 <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">App</a><ul class="simple">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">App</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="fastapi_app.html">fastapi_app package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="consumer.html">consumer package</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="swagger.html">Swagger</a></li>
@@ -79,7 +145,7 @@
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
       <li>Previous: <a href="index.html" title="previous chapter">FastAPI Data Service Documentation</a></li>
-      <li>Next: <a href="swagger.html" title="next chapter">Swagger</a></li>
+      <li>Next: <a href="fastapi_app.html" title="next chapter">fastapi_app package</a></li>
   </ul></li>
 </ul>
 </div>
