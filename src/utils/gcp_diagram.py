@@ -1,7 +1,9 @@
 from diagrams import Diagram
-from diagrams.aws.compute import EC2
-from diagrams.aws.database import RDS
-from diagrams.aws.network import ELB
+from diagrams.gcp.compute import Run
+from diagrams.gcp.database import SQL
+from diagrams.gcp.compute import Functions
+from diagrams.gcp.analytics import Pubsub
 
 with Diagram("GCP Diagram", show=False):
-    ELB("lb") >> EC2("web") >> RDS("userdb")
+    Run("Container with FastAPI") >> Pubsub("Message Queue") >> Functions(
+        "Python Consumer Function") >> SQL("Postgres")

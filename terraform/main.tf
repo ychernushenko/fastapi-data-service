@@ -59,6 +59,14 @@ resource "google_cloud_run_service" "fastapi_service" {
   autogenerate_revision_name = true
 }
 
+resource "google_cloud_run_service_iam_member" "fastapi_invoker" {
+  project  = var.project_id
+  location = var.region
+  service  = google_cloud_run_service.fastapi_service.name
+  role     = "roles/run.invoker"
+  member   = "user:y.chernushenko@gmail.com"
+}
+
 # Google Cloud Function for Consumer
 resource "google_cloudfunctions_function" "consumer_function" {
   name                  = "consumer-function-v3"
