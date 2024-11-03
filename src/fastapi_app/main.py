@@ -43,8 +43,7 @@ def publish_message_to_pubsub(data_payload: DataPayload) -> None:
     topic_path = client.topic_path(project_id, topic_id)
     message_json = json.dumps(data_payload.model_dump())
     message_bytes = message_json.encode("utf-8")
-    result = client.publish(topic_path, data=message_bytes)
-    print(result)
+    client.publish(topic_path, data=message_bytes)
 
 
 @app.post("/data/")
