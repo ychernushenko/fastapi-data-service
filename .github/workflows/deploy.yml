@@ -124,7 +124,7 @@ jobs:
             -var="db_user=${{ vars.POSTGRES_USER }}" \
             -var="db_password=${{ secrets.POSTGRES_PASSWORD }}"
  
-  generate-diagram:
+  generate-diagrams:
     needs: build-and-deploy
     runs-on: ubuntu-latest
 
@@ -165,6 +165,19 @@ jobs:
       - name: Convert DOT to PNG
         run: dot -Tpng terraform/terraform-graph.dot -o terraform-diagram.png
 
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+          poetry install --with dev
+
+      - name: Generate Diagram
+        run: |
+          poetry run python src/utils/gcp_diagram.py
+
       - name: Checkout gh-pages branch
         run: |
           git fetch origin
@@ -176,13 +189,15 @@ jobs:
         run: |
           mkdir -p docs
           mv terraform-diagram.png docs/terraform-diagram.png
+          mv gcp-diagram.png docs/gcp-diagram.png
 
       - name: Commit and force push latest diagram to gh-pages
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/terraform-diagram.png
-          git commit -m "Update Terraform diagram on gh-pages" || echo "No changes to commit"
+          git add docs/gcp-diagram.png
+          git commit -m "Update diagrams on gh-pages" || echo "No changes to commit"
           git push origin gh-pages --force
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
