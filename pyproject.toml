@@ -5,6 +5,11 @@ description = ""
 authors = ["Yuri Chernushenko <y.chernushenko@gmail.com>"]
 readme = "README.md"
 
+packages = [
+    { include = "fastapi_app", from = "src" },
+    { include = "consumer", from = "src" }
+]
+
 [tool.poetry.dependencies]
 python = "^3.10"
 fastapi = "^0.115.4"
