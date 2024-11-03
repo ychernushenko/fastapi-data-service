@@ -61,7 +61,7 @@ resource "google_cloud_run_service" "fastapi_service" {
 
 # Google Cloud Function for Consumer
 resource "google_cloudfunctions_function" "consumer_function" {
-  name                  = "consumer-function-v2"
+  name                  = "consumer-function-v3"
   runtime               = "python310"
   entry_point           = "pubsub_consumer"
   region                = var.region
