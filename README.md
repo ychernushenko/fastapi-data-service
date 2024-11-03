@@ -7,4 +7,4 @@ You can find user guides, source code and API documentation [here](https://ycher
 ## Infrastructure Diagrams
 
 ![Terraform Components](https://ychernushenko.github.io/fastapi-data-service/docs/terraform-diagram.png)  
-![GCP Diagram](https://ychernushenko.github.io/fastapi-data-service/docs/gcp-diagram.png)
+![GCP Diagram](https://ychernushenko.github.io/fastapi-data-service/docs/gcp-diagram-1.png)

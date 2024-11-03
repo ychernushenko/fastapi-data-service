@@ -189,7 +189,7 @@ jobs:
         run: |
           mkdir -p docs
           mv terraform-diagram.png docs/terraform-diagram.png
-          mv gcp_diagram.png docs/gcp-diagram.png
+          mv gcp_diagram.png docs/gcp-diagram-1.png
 
       - name: Commit and force push latest diagram to gh-pages
         run: |
