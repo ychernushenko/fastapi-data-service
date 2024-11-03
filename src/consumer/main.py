@@ -12,8 +12,8 @@ import statistics
 from datetime import datetime
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy import create_engine
-from models import ProcessedData, Base
-from schema import DataPayload
+from .models import ProcessedData, Base
+from .schema import DataPayload
 import pytz
 
 # Production database configuration

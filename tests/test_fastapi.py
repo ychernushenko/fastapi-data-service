@@ -7,14 +7,14 @@ data is correctly published to Google Pub/Sub when a valid request is made.
 
 from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
-from fastapi import app
-from fastapi.schema import DataPayload
+from fastapi_app.main import app
+from fastapi_app.schema import DataPayload
 import json
 
 client = TestClient(app)
 
 
-@patch("app.main.get_publisher_client")
+@patch("fastapi_app.main.get_publisher_client")
 def test_receive_data_success(mock_get_publisher_client):
     """
     Tests the /data endpoint to ensure data is published to Pub/Sub on a successful request.
