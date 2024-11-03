@@ -1,0 +1,29 @@
+fastapi\_app package
+====================
+
+Submodules
+----------
+
+fastapi\_app.main module
+------------------------
+
+.. automodule:: fastapi_app.main
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+fastapi\_app.schema module
+--------------------------
+
+.. automodule:: fastapi_app.schema
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: fastapi_app
+   :members:
+   :undoc-members:
+   :show-inheritance:
