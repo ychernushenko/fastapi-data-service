@@ -61,7 +61,7 @@ resource "google_cloud_run_service" "fastapi_service" {
 
 # Google Cloud Function for Consumer
 resource "google_cloudfunctions_function" "consumer_function" {
-  name                  = "consumer-function"
+  name                  = "consumer-function-v1"
   runtime               = "python310"
   entry_point           = "pubsub_consumer"
   region                = var.region
@@ -79,6 +79,10 @@ resource "google_cloudfunctions_function" "consumer_function" {
   event_trigger {
     event_type = "google.pubsub.topic.publish"
     resource   = google_pubsub_topic.data_topic.name
+  }
+
+  lifecycle {
+    create_before_destroy = true
   }
 }
 
