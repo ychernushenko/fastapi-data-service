@@ -39,7 +39,7 @@ jobs:
 
       - name: Generate OpenAPI JSON
         run: |
-          poetry run python generate_openapi.py        
+          poetry run python src/utils/generate_openapi.py        
 
       - name: Generate API documentation with sphinx-apidoc
         run: |
