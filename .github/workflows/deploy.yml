@@ -43,7 +43,8 @@ jobs:
 
       - name: Generate API documentation with sphinx-apidoc
         run: |
-          poetry run sphinx-apidoc -o docs/source src
+          poetry run sphinx-apidoc -o docs/source src/fastapi_app
+          poetry run sphinx-apidoc -o docs/source src/consumer
 
       - name: Build Sphinx docs
         run: |

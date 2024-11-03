@@ -22,6 +22,7 @@ pytz = "^2024.2"
 sphinx-autodoc-typehints = "^2.5.0"
 google-cloud-storage = "^2.18.2"
 google-cloud-pubsub = "^2.26.1"
+cloud-sql-python-connector = "^1.13.0"
 
 
 [tool.poetry.group.dev.dependencies]
