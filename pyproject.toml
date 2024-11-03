@@ -6,7 +6,7 @@ authors = ["Yuri Chernushenko <y.chernushenko@gmail.com>"]
 readme = "README.md"
 
 packages = [
-    { include = "fastapi", from = "." }
+    { include = "fastapi", from = "." },
     { include = "consumer", from = "." }
 ]
 
